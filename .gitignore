@@ -1,0 +1,10 @@
+!*.c
+!*.h
+!*.asm
+!*.s
+
+Output/
+Project/
+Listing/
+
+*.bat
