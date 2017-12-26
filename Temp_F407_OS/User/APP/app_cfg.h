@@ -64,6 +64,8 @@
 
 #define  APP_TASK_GUI_DEMO_PRIO                     18u
 
+#define  APP_TASK_MOTOR_PRIO                        17u
+
 
 
 /*
@@ -77,6 +79,8 @@
 #define  APP_TASK_START_STK_SIZE                    128u
 
 #define  APP_TASK_TOUCH_STK_SIZE                    128u
+
+#define  APP_TASK_MOTOR_STK_SIZE                    128u
 
 #define  APP_TASK_LED1_STK_SIZE                     128u
 

@@ -59,6 +59,8 @@ static  OS_TCB   AppTaskSensorTCB;
 
 static  OS_TCB   AppTaskGUIDemoTCB;
 
+static  OS_TCB   AppTaskMotorTCB;
+
 
 
 
@@ -80,6 +82,8 @@ static  CPU_STK  AppTaskTouchStk[APP_TASK_TOUCH_STK_SIZE];
 
 static  CPU_STK  AppTaskGUIDemoStk[APP_TASK_GUI_DEMO_STK_SIZE];
 
+static  CPU_STK  AppTaskMotorStk[APP_TASK_MOTOR_STK_SIZE];
+
 
 
 
@@ -98,6 +102,8 @@ static  void  AppTaskStart  (void *p_arg);
 static  void  AppTaskLed1   (void *p_arg);
 
 static  void  AppTaskTouch  (void *p_arg);
+
+static  void  AppTaskMotor  (void *p_arg);
 
 
 
@@ -248,6 +254,27 @@ static  void  AppTaskStart (void *p_arg)
     }
 	
 	
+	//创建步进电机任务
+	
+	OSTaskCreate((OS_TCB     *)&AppTaskMotorTCB,                                        
+				(CPU_CHAR   *)"Motor", 									                     
+				(OS_TASK_PTR ) AppTaskMotor,									                        
+			    (void       *) 0,																
+				(OS_PRIO     ) APP_TASK_MOTOR_PRIO,					
+				(CPU_STK    *)&AppTaskMotorStk[0],						
+				(CPU_STK_SIZE) APP_TASK_MOTOR_STK_SIZE / 10,				
+			    (CPU_STK_SIZE) APP_TASK_MOTOR_STK_SIZE,        		
+				(OS_MSG_QTY  ) 0u,
+				(OS_TICK     ) 0u,
+				(void       *) 0,
+	     		(OS_OPT      )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
+				(OS_ERR     *)&err);															
+
+	if(err==OS_ERR_NONE) {
+		BSP_UART_Printf(BSP_UART_ID_1, "OK");
+    }
+	
+	
 	//创建应用任务,emwin的官方示例函数 GUIDEMO_Main
 	
 	OSTaskCreate((OS_TCB     *)&AppTaskGUIDemoTCB,                                        
@@ -304,7 +331,7 @@ static  void  AppTaskSensor (void *p_arg)
 		OSTimeDlyHMSM( 0, 0, 0, 200,
 		               OS_OPT_TIME_HMSM_STRICT,
                        &err );		
-//		
+		
 		BSP_LED_Toggle(1);
 		
 //		if(DEF_OK == BSP_18B20_GetTemp(&temp)) {
@@ -318,9 +345,9 @@ static  void  AppTaskSensor (void *p_arg)
 
 /*
 *********************************************************************************************************
-*                                          UART1 TASK
+*                                          Touch TASK
 *
-* Description : 回传接收到的数据
+* Description : 触摸屏更新任务
 *
 * Arguments   : p_arg   is the argument passed to 'AppTaskStart()' by 'OSTaskCreate()'.
 *
@@ -349,7 +376,19 @@ static  void  AppTaskTouch (void *p_arg)
 
 
 
-
+/*
+*********************************************************************************************************
+*                                          TASK
+*
+* Description : 
+*
+* Arguments   : p_arg   is the argument passed to 'AppTaskStart()' by 'OSTaskCreate()'.
+*
+* Returns     : none
+*
+* Notes       : none
+*********************************************************************************************************
+*/
 
 static  void  AppTaskLed1   (void *p_arg)
 {
@@ -363,10 +402,47 @@ static  void  AppTaskLed1   (void *p_arg)
 	while(DEF_ON) {
 		
 		
+		BSP_UART_Printf(BSP_UART_ID_1,"CH1: %d\r\n", BSP_ADC_GetDat(BSP_ADC_CH1));
+		BSP_UART_Printf(BSP_UART_ID_1,"CH2: %d\r\n", BSP_ADC_GetDat(BSP_ADC_CH2));
+		BSP_UART_Printf(BSP_UART_ID_1,"CH3: %d\r\n\r\n", BSP_ADC_GetDat(BSP_ADC_CH3));
+		
 		OSTimeDlyHMSM( 0, 0, 1, 0,
 		               OS_OPT_TIME_HMSM_STRICT,
                        &err );
 	}
 }
 
+
+/*
+*********************************************************************************************************
+*                                          Motor TASK
+*
+* Description : 步进电机任务
+*
+* Arguments   : p_arg   is the argument passed to 'AppTaskStart()' by 'OSTaskCreate()'.
+*
+* Returns     : none
+*
+* Notes       : none
+*********************************************************************************************************
+*/
+
+static  void  AppTaskMotor  (void *p_arg)
+{
+	OS_ERR      err;
+	
+	(void) p_arg;
+		
+	/* 显示测试 */
+
+	while(DEF_ON) {
+		BSP_UART_Printf(BSP_UART_ID_1, "hello\r\n");
+		BSP_Turn_Motor(360, MOTOR_DIR_RIGHT);
+		
+		OSTimeDlyHMSM( 0, 0, 3, 0,
+		               OS_OPT_TIME_HMSM_STRICT,
+                       &err );
+	}
+	
+}
 

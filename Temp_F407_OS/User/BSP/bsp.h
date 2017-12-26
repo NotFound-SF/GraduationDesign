@@ -83,6 +83,7 @@
 #include "bsp_adc.h"
 #include "bsp_lcd.h"
 #include "bsp_touch.h"
+#include "bsp_motor.h"
 
 
 

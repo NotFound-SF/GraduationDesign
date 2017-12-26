@@ -258,22 +258,22 @@ void BSP_LCD_OpenWindow ( uint16_t usX, uint16_t usY, uint16_t usWidth, uint16_t
  * @param  无
  * @retval 像素数据
  */
-static uint16_t ILI9341_Read_PixelData ( void )	
-{	
-	uint16_t usR=0, usG=0, usB=0 ;
+//static uint16_t ILI9341_Read_PixelData ( void )	
+//{	
+//	uint16_t usR=0, usG=0, usB=0 ;
 
-	
-	BSP_LCD_WriteCmd ( 0x2E );   /* 读数据 */
-	
-	usR = BSP_LCD_ReadDat (); 	/*FIRST READ OUT DUMMY DATA*/
-	
-	usR = BSP_LCD_ReadDat ();  	/*READ OUT RED DATA  */
-	usB = BSP_LCD_ReadDat ();  	/*READ OUT BLUE DATA*/
-	usG = BSP_LCD_ReadDat ();  	/*READ OUT GREEN DATA*/	
-	
-  return ( ( ( usR >> 11 ) << 11 ) | ( ( usG >> 10 ) << 5 ) | ( usB >> 11 ) );
-	
-}
+//	
+//	BSP_LCD_WriteCmd ( 0x2E );   /* 读数据 */
+//	
+//	usR = BSP_LCD_ReadDat (); 	/*FIRST READ OUT DUMMY DATA*/
+//	
+//	usR = BSP_LCD_ReadDat ();  	/*READ OUT RED DATA  */
+//	usB = BSP_LCD_ReadDat ();  	/*READ OUT BLUE DATA*/
+//	usG = BSP_LCD_ReadDat ();  	/*READ OUT GREEN DATA*/	
+//	
+//  return ( ( ( usR >> 11 ) << 11 ) | ( ( usG >> 10 ) << 5 ) | ( usB >> 11 ) );
+//	
+//}
 
 
 

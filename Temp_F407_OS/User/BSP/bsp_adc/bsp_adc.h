@@ -22,29 +22,29 @@
 
 #define         DAC_CH_NUM                              3                                 //通道个数
 
-// 实质是CH1是ADC1,2的CH7
+// 实质是CH1是ADC1,2,3的CH0    PA0
 
 #define         DAC_CH1_GPIO_PORT                       GPIOA
-#define         DAC_CH1_PIN                             GPIO_Pin_7
-#define         DAC_CH1_PIN_SOURCE                      GPIO_PinSource7
+#define         DAC_CH1_PIN                             GPIO_Pin_0
+#define         DAC_CH1_PIN_SOURCE                      GPIO_PinSource0
 #define         DAC_CH1_GPIO_RCC                        RCC_AHB1Periph_GPIOA
-#define         DAC_CH1                                 ADC_Channel_7
+#define         DAC_CH1                                 ADC_Channel_0
 
-// 实质是CH1是ADC1,2的CH8
+// 实质是CH1是ADC1,2的CH1      PA1
 
-#define         DAC_CH2_GPIO_PORT                       GPIOB
-#define         DAC_CH2_PIN                             GPIO_Pin_0
-#define         DAC_CH2_PIN_SOURCE                      GPIO_PinSource0
-#define         DAC_CH2_GPIO_RCC                        RCC_AHB1Periph_GPIOB
-#define         DAC_CH2                                 ADC_Channel_8
+#define         DAC_CH2_GPIO_PORT                       GPIOA
+#define         DAC_CH2_PIN                             GPIO_Pin_1
+#define         DAC_CH2_PIN_SOURCE                      GPIO_PinSource1
+#define         DAC_CH2_GPIO_RCC                        RCC_AHB1Periph_GPIOA
+#define         DAC_CH2                                 ADC_Channel_1
 
-// 实质是CH1是ADC1,2的CH9
+// 实质是CH1是ADC1,2的CH4      PA4
 
-#define         DAC_CH3_GPIO_PORT                       GPIOB
-#define         DAC_CH3_PIN                             GPIO_Pin_1
-#define         DAC_CH3_PIN_SOURCE                      GPIO_PinSource1
-#define         DAC_CH3_GPIO_RCC                        RCC_AHB1Periph_GPIOB
-#define         DAC_CH3                                 ADC_Channel_9
+#define         DAC_CH3_GPIO_PORT                       GPIOA
+#define         DAC_CH3_PIN                             GPIO_Pin_4
+#define         DAC_CH3_PIN_SOURCE                      GPIO_PinSource4
+#define         DAC_CH3_GPIO_RCC                        RCC_AHB1Periph_GPIOA
+#define         DAC_CH3                                 ADC_Channel_4
 
 
 // 通道编号，用于获取数据
