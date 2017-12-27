@@ -402,9 +402,12 @@ static  void  AppTaskLed1   (void *p_arg)
 	while(DEF_ON) {
 		
 		
-		BSP_UART_Printf(BSP_UART_ID_1,"CH1: %d\r\n", BSP_ADC_GetDat(BSP_ADC_CH1));
-		BSP_UART_Printf(BSP_UART_ID_1,"CH2: %d\r\n", BSP_ADC_GetDat(BSP_ADC_CH2));
-		BSP_UART_Printf(BSP_UART_ID_1,"CH3: %d\r\n\r\n", BSP_ADC_GetDat(BSP_ADC_CH3));
+//		BSP_UART_Printf(BSP_UART_ID_1,"CH1: %d\r\n", BSP_ADC_GetDat(BSP_ADC_CH1));
+//		BSP_UART_Printf(BSP_UART_ID_1,"CH2: %d\r\n", BSP_ADC_GetDat(BSP_ADC_CH2));
+//		BSP_UART_Printf(BSP_UART_ID_1,"CH3: %d\r\n\r\n", BSP_ADC_GetDat(BSP_ADC_CH3));
+		
+		
+		BSP_UART_Printf(BSP_UART_ID_1, "i: %f\r\n", BSP_ACS_GetS_Real());
 		
 		OSTimeDlyHMSM( 0, 0, 1, 0,
 		               OS_OPT_TIME_HMSM_STRICT,
@@ -436,10 +439,9 @@ static  void  AppTaskMotor  (void *p_arg)
 	/* œ‘ æ≤‚ ‘ */
 
 	while(DEF_ON) {
-		BSP_UART_Printf(BSP_UART_ID_1, "hello\r\n");
 		BSP_Turn_Motor(360, MOTOR_DIR_RIGHT);
 		
-		OSTimeDlyHMSM( 0, 0, 3, 0,
+		OSTimeDlyHMSM( 0, 0, 6, 0,
 		               OS_OPT_TIME_HMSM_STRICT,
                        &err );
 	}

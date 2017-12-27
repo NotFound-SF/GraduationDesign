@@ -1,3 +1,10 @@
+电流传感器使用ADC通道1即 PA0
+
+
+
+
+
+
 步进电机：    PC6、 PC7、 PC8、 PC9
 触摸屏  :     PB0、 PB1、 PB2、 PA5、 PF11
 ADC：         PA0(USART4_TX)、 PA1(USART4_RX)、 PA4（DCMI_HREF）   
@@ -144,10 +151,7 @@ PG12
 
 
 
- 
 
-
-待修改ADC引脚
 
 
 

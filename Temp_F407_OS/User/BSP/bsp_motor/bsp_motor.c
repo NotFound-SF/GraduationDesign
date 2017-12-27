@@ -107,6 +107,7 @@ void  BSP_Turn_Motor(uint16_t angle, MOTOR_DIR_X dir)
 	uint32_t beats = (angle * 4076) / 360;                       //节拍数
 
 	if(0 == angle) {
+		BSP_MOTOR_GPIO_OUT(0x00);                                // 确保步进电机不通电
 		return;
 	}
 
@@ -121,7 +122,7 @@ void  BSP_Turn_Motor(uint16_t angle, MOTOR_DIR_X dir)
 
 	for ( ; beats>0; beats--) {
 		
-		if (MOTOR_DIR_RIGHT == dir) {
+		if (MOTOR_DIR_LIFT == dir) {
 			index++; 
 		} else {
 			index--;
@@ -132,7 +133,7 @@ void  BSP_Turn_Motor(uint16_t angle, MOTOR_DIR_X dir)
 		BSP_MOTOR_GPIO_OUT( BeatCode[index] );
 		
 		// 每个节拍延时2ms
-		OSTimeDly((OS_TICK )  2, 
+		OSTimeDly((OS_TICK )  3, 
 				  (OS_OPT  )  OS_OPT_TIME_DLY, 
 				  (OS_ERR *)& err);
 	}

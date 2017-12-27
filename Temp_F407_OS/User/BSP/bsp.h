@@ -84,6 +84,7 @@
 #include "bsp_lcd.h"
 #include "bsp_touch.h"
 #include "bsp_motor.h"
+#include "bsp_acs712.h"
 
 
 
