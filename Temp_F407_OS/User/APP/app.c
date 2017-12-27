@@ -344,9 +344,9 @@ static  void  AppTaskSensor (void *p_arg)
 //		
 //		BSP_LCD_DrawHColorLine(80, 160, 40, color);
 
-//		BSP_LCD_DrawVLine(10, 10, 240, RED);
+//		BSP_LCD_DrawVLine(10, 0, 240, RED);
 //	
-//		BSP_LCD_DrawHLine(20,120, 160, YELLOW);
+//		BSP_LCD_DrawHLine(0,120, 320, YELLOW);
 //		
 //		BSP_LCD_SetPointPixel(1, 1, 0x3577);
 //		
@@ -443,8 +443,8 @@ static  void  AppTaskLed1   (void *p_arg)
 		
 		
 //		BSP_UART_Printf(BSP_UART_ID_1, "i: %f\r\n", BSP_ACS_GetS_Real());
-		
-		OSTimeDlyHMSM( 0, 0, 1, 0,
+		BSP_LED_Toggle(1);
+		OSTimeDlyHMSM( 0, 0, 0, 200,
 		               OS_OPT_TIME_HMSM_STRICT,
                        &err );
 	}

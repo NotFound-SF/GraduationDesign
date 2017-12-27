@@ -69,10 +69,13 @@ Purpose     : Display controller configuration (single layer)
 //
 // ¥•√˛∆¡≤Œ ˝≈‰÷√
 //
-#define TOUCH_AD_TOP            1896     //YPhys0
-#define TOUCH_AD_BOTTOM         96       //YPhys1
-#define TOUCH_AD_LEFT           2016     //XPhys0
-#define TOUCH_AD_RIGHT          56       //XPhys1
+
+
+#define TOUCH_AD_TOP            56       //YPhys0
+#define TOUCH_AD_BOTTOM         2016     //YPhys1
+#define TOUCH_AD_LEFT           1896     //XPhys0
+#define TOUCH_AD_RIGHT          96       //XPhys1
+
 /*
 **********************************************************************
 *

@@ -59,13 +59,12 @@ void MainTask(void) {
   // Check if recommended memory for the sample is available
   //
   if (GUI_ALLOC_GetNumFreeBytes() < RECOMMENDED_MEMORY) {
-    GUI_ErrorOut("Not enough memory available."); 
+    GUI_ErrorOut("Not enough memory available.");
     return;
   }
-  
   GUI_CURSOR_Show();
   GUI_CURSOR_Select(&GUI_CursorCrossL);
-  GUI_SetBkColor(GUI_WHITE);
+  GUI_SetBkColor(GUI_RED);
   GUI_SetColor(GUI_BLACK);
   GUI_Clear();
   GUI_DispString("Measurement of\nA/D converter values");

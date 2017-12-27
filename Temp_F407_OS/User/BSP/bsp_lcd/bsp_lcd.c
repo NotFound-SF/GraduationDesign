@@ -262,7 +262,6 @@ uint16_t BSP_LCD_GetPointPixel ( uint16_t usX, uint16_t usY )
 
 
 
-
 /*
 *********************************************************************************************************
 *                                         BSP_LCD_DrawHLine()
@@ -322,11 +321,17 @@ void BSP_LCD_DrawHLine(uint16_t usX1 , uint16_t usY1 , uint16_t usX2 , uint16_t 
 
 void BSP_LCD_DrawVLine(uint16_t usX1 , uint16_t usY1 , uint16_t usY2 , uint16_t usColor)
 {
-	uint16_t index;
+	uint16_t index, len = usY2-usY1+1;
+
+	BSP_LCD_OpenWindow(usX1, usY1, 1, len);
+
+	BSP_LCD_WriteCmd(CMD_SetPixel);                       // 填充数据指令
+
+	// 写显存 
 	
-	for (index = usY1; index <= usY2; index++)
-	{	
-		BSP_LCD_SetPointPixel(usX1, index, usColor);	
+	for (index = 0; index < len; index++)
+	{
+		BSP_LCD_WriteDat(usColor);
 	}
 }
 
@@ -358,7 +363,7 @@ void BSP_LCD_FillRect(uint16_t usX, uint16_t usY, uint16_t usHeight, uint16_t us
 	uint32_t index;
 	uint32_t count = usHeight * usWidth;
 
-	BSP_LCD_OpenWindow(usX, usY, usHeight, usWidth);
+	BSP_LCD_OpenWindow(usX, usY,  usWidth, usHeight);
 
 	BSP_LCD_WriteCmd(CMD_SetPixel);                       // 填充数据指令
 	

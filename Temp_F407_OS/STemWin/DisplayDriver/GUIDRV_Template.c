@@ -212,7 +212,7 @@ static unsigned int _GetPixelIndex(GUI_DEVICE * pDevice, int x, int y) {
       //
       // TBD by customer...
       //
-		BSP_LCD_GetPointPixel(xPhys, yPhys);
+		PixelIndex = BSP_LCD_GetPointPixel(xPhys, yPhys);
     }
     #if (LCD_MIRROR_X == 0) && (LCD_MIRROR_Y == 0) && (LCD_SWAP_XY == 0)
       #undef xPhys
