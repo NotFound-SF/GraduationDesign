@@ -170,7 +170,7 @@ void GUI_X_Lock(void)
 	OSSemPend((OS_SEM *)&DispSem,
 			  (OS_TICK )0,
 			  (OS_OPT  )OS_OPT_PEND_BLOCKING,
-			  (CPU_TS  )0,
+			  (CPU_TS *)0,
 			  (OS_ERR *)&err);
 }
 
@@ -189,7 +189,7 @@ void GUI_X_WaitEvent (void)
 	OSSemPend((OS_SEM *)&EventSem,
 	(OS_TICK )0,
 	(OS_OPT  )OS_OPT_PEND_BLOCKING,
-	(CPU_TS  )0,
+	(CPU_TS *)0,
 	(OS_ERR *)&err);
 }
 

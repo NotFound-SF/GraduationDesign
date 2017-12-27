@@ -246,17 +246,16 @@
 void  BSP_Init (void)
 {
 	BSP_LED_Init(); 
-	BSP_MOTOR_Init();
+//	BSP_MOTOR_Init();
 	BSP_UART_Init(BSP_UART_ID_1,115200);
 	BSP_SRAM_Init();
 	BSP_Timing_Init();
 //	BSP_18B20_Init();
 //	BSP_GA6_Init();
-	BSP_ADC_Init();
+//	BSP_ADC_Init();
 	BSP_LCD_Init();
 	XPT2046_Init();
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_CRC, ENABLE); 
-	GUI_Init();
 }
 
 

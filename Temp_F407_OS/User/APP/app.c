@@ -317,23 +317,58 @@ static  void  AppTaskStart (void *p_arg)
 static  void  AppTaskSensor (void *p_arg)
 {
 	OS_ERR     err;
+//	uint16_t   index = 0;
+//	
+//	uint16_t   color[40]; 
 	
 //	uint16_t   temp;
-	
+//	
 
+//	
+//	for (index = 0; index < 40; index++) {
+//		if (index < 10)
+//		  color[index] = RED;
+//		else
+//			color[index] = YELLOW;
+//	}
 	
 	(void)p_arg;	
 	
-	BSP_LCD_BL_ON();
 
 	while (DEF_ON) {
 					
-		OSTimeDlyHMSM( 0, 0, 0, 200,
+//		BSP_LED_Toggle(1);
+//		BSP_LCD_ClrScr(WHITE);
+//		
+//		BSP_LCD_FillRect(20, 10, 10, 10, RED);
+//		
+//		BSP_LCD_DrawHColorLine(80, 160, 40, color);
+
+//		BSP_LCD_DrawVLine(10, 10, 240, RED);
+//	
+//		BSP_LCD_DrawHLine(20,120, 160, YELLOW);
+//		
+//		BSP_LCD_SetPointPixel(1, 1, 0x3577);
+//		
+//		temp = BSP_LCD_GetPointPixel(1,1);
+//		
+//		if (0x3577 == temp) {
+//			BSP_UART_Printf(BSP_UART_ID_1, "OK\r\n");
+//		} else {
+//			BSP_UART_Printf(BSP_UART_ID_1, "FAIL %X\r\n", temp);
+//		}
+			
+		
+		OSTimeDlyHMSM( 0, 0, 1, 0,
 		               OS_OPT_TIME_HMSM_STRICT,
-                       &err );		
+                       &err );	
 		
-		BSP_LED_Toggle(1);
 		
+		
+//		index++;
+//		if (index==5)
+//			index = 0;
+//		
 //		if(DEF_OK == BSP_18B20_GetTemp(&temp)) {
 //			BSP_UART_Printf(BSP_UART_ID_1, "Temp: %.4f\n", BSP_18B20_TempTran(temp));
 //		}
@@ -407,7 +442,7 @@ static  void  AppTaskLed1   (void *p_arg)
 //		BSP_UART_Printf(BSP_UART_ID_1,"CH3: %d\r\n\r\n", BSP_ADC_GetDat(BSP_ADC_CH3));
 		
 		
-		BSP_UART_Printf(BSP_UART_ID_1, "i: %f\r\n", BSP_ACS_GetS_Real());
+//		BSP_UART_Printf(BSP_UART_ID_1, "i: %f\r\n", BSP_ACS_GetS_Real());
 		
 		OSTimeDlyHMSM( 0, 0, 1, 0,
 		               OS_OPT_TIME_HMSM_STRICT,
@@ -439,7 +474,7 @@ static  void  AppTaskMotor  (void *p_arg)
 	/* ÏÔÊ¾²âÊÔ */
 
 	while(DEF_ON) {
-		BSP_Turn_Motor(360, MOTOR_DIR_RIGHT);
+//		BSP_Turn_Motor(360, MOTOR_DIR_RIGHT);
 		
 		OSTimeDlyHMSM( 0, 0, 6, 0,
 		               OS_OPT_TIME_HMSM_STRICT,

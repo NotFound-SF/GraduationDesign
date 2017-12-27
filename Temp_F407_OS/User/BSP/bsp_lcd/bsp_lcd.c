@@ -30,10 +30,15 @@ uint8_t LCD_SCAN_MODE = 3;    //横屏
 *********************************************************************************************************
 */
 
+static __inline    void       BSP_LCD_WriteCmd(uint16_t cmd);
+static __inline    void       BSP_LCD_WriteDat(uint16_t dat);
 
 static  void         BSP_LCD_CTRL_GPIO_Init (void);
+static  void         BSP_LCD_FSMC_Init      (void);
 static  void         ILI9341_REG_Config     (void);
 static  void         ILI9341_GramScan       (uint8_t ucOption);
+static  void         BSP_LCD_SetCursor      (uint16_t usX, uint16_t usY);
+static  void         BSP_LCD_OpenWindow     (uint16_t usX, uint16_t usY, uint16_t usWidth, uint16_t usHeight);
 
 #if  LCD_DMA_EN > 0	
 static  void         BSP_LCD_DMA_Config     (void);
@@ -48,9 +53,6 @@ static  void         BSP_LCD_DMA_Config     (void);
 *********************************************************************************************************
 *********************************************************************************************************
 */
-
-
-
 
 
 /*
@@ -71,84 +73,39 @@ static  void         BSP_LCD_DMA_Config     (void);
 
 void  BSP_LCD_Init(void)
 {
-	
-	FSMC_NORSRAMInitTypeDef        lcdInit;
-	FSMC_NORSRAMTimingInitTypeDef  lcdTimigWr, lcdTimigRd;
-	
 	// 初始化FSMC与初始化控制引脚
 	
 	BSP_FSMC_COMMON_Init();
 	BSP_LCD_CTRL_GPIO_Init();
 	
+	// 初始化FSMC
 	
-	// 读时序配置
-	
-	lcdTimigRd.FSMC_DataSetupTime         = 0x01;                             // x/55ns = 168/1000 ns ,x = 9.24
-	lcdTimigRd.FSMC_AddressSetupTime      = 0x02;                             //地址建立时间
-	
-	lcdTimigRd.FSMC_AccessMode            = FSMC_AccessMode_B;                //模式A参见参考手册
-//	lcdTimigRd.FSMC_DataSetupTime         = 0x05;                             // x/55ns = 168/1000 ns ,x = 9.24
-//	lcdTimigRd.FSMC_AddressSetupTime      = 0x05;                             //地址建立时间
-	lcdTimigRd.FSMC_CLKDivision           = 0x01;                             //LCD工作在异步模式该位无意义                      
-	lcdTimigRd.FSMC_DataLatency           = 0x01;                             //表示数据延迟周期，LCD工作在异步模式该位无意义 
-	lcdTimigRd.FSMC_AddressHoldTime       = 0x01;                             //使用与模式D,模式A该位无意义
-	lcdTimigRd.FSMC_BusTurnAroundDuration = 0x00;                             //LCD 该位无意义
-	
-	// 写时序配置
-	lcdTimigRd.FSMC_DataSetupTime         = 0x01;                             // x/55ns = 168/1000 ns ,x = 9.24
-	lcdTimigRd.FSMC_AddressSetupTime      = 0x02;                             //地址建立时间
-	
-	lcdTimigWr.FSMC_AccessMode            = FSMC_AccessMode_B;                //模式A参见参考手册
-//	lcdTimigWr.FSMC_DataSetupTime         = 0x05;                             // x/55ns = 168/1000 ns ,x = 9.24
-//	lcdTimigWr.FSMC_AddressSetupTime      = 0x05;                             //地址建立时间
-	lcdTimigWr.FSMC_CLKDivision           = 0x01;                             //LCD工作在异步模式该位无意义                      
-	lcdTimigWr.FSMC_DataLatency           = 0x01;                             //表示数据延迟周期，LCD工作在异步模式该位无意义 
-	lcdTimigWr.FSMC_AddressHoldTime       = 0x01;                             //适用与模式D,模式A该位无意义
-	lcdTimigWr.FSMC_BusTurnAroundDuration = 0x00;                             //LCD 该位无意义
-
-	lcdInit.FSMC_MemoryType            = FSMC_MemoryType_NOR;                 //存储器类型
-	lcdInit.FSMC_Bank                  = BSP_LCD_Bank;                        //LCD所在块
-	lcdInit.FSMC_DataAddressMux        = FSMC_DataAddressMux_Disable;         //不复用地址引脚与数据引脚
-	lcdInit.FSMC_WriteOperation        = FSMC_WriteOperation_Enable;          //允许写访问
-	lcdInit.FSMC_ExtendedMode          = FSMC_ExtendedMode_Enable;            //读写时序可以分别配置
-	lcdInit.FSMC_MemoryDataWidth       = FSMC_MemoryDataWidth_16b;            //外部存储器数据宽度
-	
-	lcdInit.FSMC_BurstAccessMode       = FSMC_BurstAccessMode_Disable;        //仅适用于同步存储器
-	lcdInit.FSMC_AsynchronousWait      = FSMC_AsynchronousWait_Disable;       //该LCD无等待引脚
-	lcdInit.FSMC_WaitSignalPolarity    = FSMC_WaitSignalPolarity_High;        //等待信号为高电平有效，LCD无用
-	lcdInit.FSMC_WaitSignal            = FSMC_WaitSignal_Disable;             //用于NOR
-	lcdInit.FSMC_WaitSignalActive      = FSMC_WaitSignalActive_BeforeWaitState;
-	lcdInit.FSMC_WrapMode              = FSMC_WrapMode_Disable;               //仅在突发模式下有效
-	lcdInit.FSMC_WriteBurst            = FSMC_WriteBurst_Disable;             //仅在同步模式下有效
-	
-	lcdInit.FSMC_ReadWriteTimingStruct = &lcdTimigWr;
-	lcdInit.FSMC_WriteTimingStruct     = &lcdTimigRd;
-
-	FSMC_NORSRAMInit(&lcdInit);
-	FSMC_NORSRAMCmd(BSP_LCD_Bank, ENABLE);
-	
+	BSP_LCD_FSMC_Init();
 	
 	// 初始化LCD控制器
 	
 	ILI9341_REG_Config();
+	
 	// 配置DMA
 #if  LCD_DMA_EN > 0	
 	BSP_LCD_DMA_Config();
-	
 #endif /* LCD_DMA_EN */
 	
-	BSP_LCD_BL_ON();
+	// 配置横竖屏模式
 	
 	ILI9341_GramScan(LCD_SCAN_MODE);
+	
+	BSP_LCD_BL_ON();                               // 开背光
+	BSP_LCD_ClrScr(WHITE);                         // 清屏为白色
 }
 
 /*
 *********************************************************************************************************
-*                                         BSP_LCD_WriteDat()
+*                                         BSP_LCD_ClrScr()
 *
-* Description :  向显存写入数据
+* Description :  清屏函数
 *
-* Argument(s) :  dat   要写入的数据
+* Argument(s) :  usColor: 将屏幕清成制定颜色
 *
 * Return(s)   :  none
 *
@@ -158,19 +115,88 @@ void  BSP_LCD_Init(void)
 *********************************************************************************************************
 */
 
-__inline void BSP_LCD_WriteDat(uint16_t dat)
+void BSP_LCD_ClrScr(uint16_t usColor)
 {
-	BSP_LCD_DAT = dat;
+	uint32_t index;   
+	uint32_t count = ILI9341_ALL_PIXEL/10;               //要填充像素点的个数/10,减少for循环次数
+	
+	BSP_LCD_OpenWindow(0, 0, LCD_X_LENGTH, LCD_Y_LENGTH);
+	BSP_LCD_WriteCmd(CMD_SetPixel);                      // 填充数据指令
+	
+	// 这样优化能每次减少9条跳转指令与比较指令
+	
+	for (index = 0; index < count; index++) {
+		BSP_LCD_WriteDat(usColor);                       // 填充颜色
+		BSP_LCD_WriteDat(usColor); 
+		BSP_LCD_WriteDat(usColor); 
+		BSP_LCD_WriteDat(usColor); 
+		BSP_LCD_WriteDat(usColor); 
+		BSP_LCD_WriteDat(usColor); 
+		BSP_LCD_WriteDat(usColor); 
+		BSP_LCD_WriteDat(usColor); 
+		BSP_LCD_WriteDat(usColor); 
+		BSP_LCD_WriteDat(usColor); 
+	}
+	
 }
 
 
 /*
 *********************************************************************************************************
-*                                         BSP_LCD_ReadDat()
+*                                         LCD_GetHeight()
 *
-* Description :  从LCD读取数据
+* Description :  获取液晶屏幕高度
 *
-* Argument(s) :  dat   要写入的数据
+* Argument(s) :  none
+*
+* Return(s)   :  晶屏幕高度
+*
+* Caller(s)   :  Application
+*
+* Note(s)     :  none.
+*********************************************************************************************************
+*/
+
+
+uint16_t LCD_GetHeight(void)
+{
+	return LCD_Y_LENGTH;
+}
+
+
+/*
+*********************************************************************************************************
+*                                         LCD_GetWidth()
+*
+* Description :  获取液晶屏幕宽度
+*
+* Argument(s) :  none
+*
+* Return(s)   :  晶屏幕宽度
+*
+* Caller(s)   :  Application
+*
+* Note(s)     :  none.
+*********************************************************************************************************
+*/
+
+
+uint16_t LCD_GetWidth(void)
+{
+	return LCD_X_LENGTH;
+}
+
+
+
+/*
+*********************************************************************************************************
+*                                         BSP_LCD_SetPointPixel()
+*
+* Description :  对ILI9341显示器的某一点以某种颜色进行填充
+*
+* Argument(s) :  usX     ：在特定扫描方向下该点的X坐标
+*                usY     ：在特定扫描方向下该点的Y坐标
+*                usColor ：待填充的颜色
 *
 * Return(s)   :  none
 *
@@ -180,9 +206,58 @@ __inline void BSP_LCD_WriteDat(uint16_t dat)
 *********************************************************************************************************
 */
 
-__inline uint16_t BSP_LCD_ReadDat(void)
-{
-	return BSP_LCD_DAT;
+void BSP_LCD_SetPointPixel (uint16_t usX, uint16_t usY, uint16_t usColor)	
+{	
+		BSP_LCD_SetCursor ( usX, usY );                      // 设置光标
+		BSP_LCD_WriteCmd(CMD_SetPixel);                      // 填充数据指令
+		BSP_LCD_WriteDat(usColor);                           // 填充颜色
+}
+
+
+
+/*
+*********************************************************************************************************
+*                                         BSP_LCD_GetPointPixel()
+*
+* Description :  获取显示器的某一点的颜色
+*
+* Argument(s) :  usX     ：在特定扫描方向下该点的X坐标
+*                usY     ：在特定扫描方向下该点的Y坐标
+*
+* Return(s)   :  none
+*
+* Caller(s)   :  Application
+*
+* Note(s)     :  none.
+*********************************************************************************************************
+*/ 
+
+uint16_t BSP_LCD_GetPointPixel ( uint16_t usX, uint16_t usY )
+{ 
+	__IO uint16_t  noUse;                                // 无用数据，用作存放垃圾值，防止被优化       
+	uint16_t usG=0, usB=0 ;
+	
+	BSP_LCD_SetCursor ( usX, usY );                      // 设置光标
+	BSP_LCD_WriteCmd(CMD_GetPixel);                      // 读取数据指令
+	
+	// 该控制器写入为565格式，但是读出了是RGB格式
+	
+	noUse = BSP_LCD_DAT; 	                             // 第一个读出的是无效数据
+
+	noUse++;                                             // 必要的短暂延时否则数据读出出错
+	noUse = BSP_LCD_DAT;                                 // 第二位数据也无效    
+	
+	// 下面两次读操作切不可交换位置
+	
+	noUse++;                                             // 必要的短暂延时否则数据读出出错
+	usG = BSP_LCD_DAT;  	                             // 高8位的高5bit是R,第8位的高6bit是G
+
+	noUse++;                                             // 必要的短暂延时否则数据读出出错
+	usB = BSP_LCD_DAT;                                   // 高8位的高5bit是B,第8位的高5bit是R
+	
+	// 将GRB格式数据转换为565格式，并且合并成16bit
+
+	return  ((usG&0xF800) | ((usG&0xFC)<< 3) | ( usB>>11));
 }
 
 
@@ -190,11 +265,14 @@ __inline uint16_t BSP_LCD_ReadDat(void)
 
 /*
 *********************************************************************************************************
-*                                         BSP_LCD_WriteCmd()
+*                                         BSP_LCD_DrawHLine()
 *
-* Description :  向显存写入命令
+* Description :  绘制一条水平线 （主要用于STemwin的接口函数）
 *
-* Argument(s) :  cmd   要写入的指令
+* Argument(s) :  usX1    ：起始点X坐标
+*                usY1    ：水平线的Y坐标
+*                usX2    ：结束点X坐标
+*                usColor : 颜色
 *
 * Return(s)   :  none
 *
@@ -204,10 +282,129 @@ __inline uint16_t BSP_LCD_ReadDat(void)
 *********************************************************************************************************
 */
 
-__inline void BSP_LCD_WriteCmd(uint16_t cmd)
+void BSP_LCD_DrawHLine(uint16_t usX1 , uint16_t usY1 , uint16_t usX2 , uint16_t usColor)
 {
-	BSP_LCD_CMD = cmd;
+	uint16_t index, len = usX2-usX1+1;
+
+	BSP_LCD_OpenWindow(usX1, usY1, len, 1);
+
+	BSP_LCD_WriteCmd(CMD_SetPixel);                       // 填充数据指令
+
+	// 写显存 
+	
+	for (index = 0; index < len; index++)
+	{
+		BSP_LCD_WriteDat(usColor);
+	}
 }
+
+
+
+
+/*
+*********************************************************************************************************
+*                                         BSP_LCD_DrawVLine()
+*
+* Description :  绘制一条锤子平线 （主要用于STemwin的接口函数）
+*
+* Argument(s) :  usX1    ：起始点X坐标
+*                usY1    ：水平线的Y坐标
+*                usY2    ：结束点Y坐标
+*                usColor : 颜色
+*
+* Return(s)   :  none
+*
+* Caller(s)   :  Application
+*
+* Note(s)     :  none.
+*********************************************************************************************************
+*/
+
+void BSP_LCD_DrawVLine(uint16_t usX1 , uint16_t usY1 , uint16_t usY2 , uint16_t usColor)
+{
+	uint16_t index;
+	
+	for (index = usY1; index <= usY2; index++)
+	{	
+		BSP_LCD_SetPointPixel(usX1, index, usColor);	
+	}
+}
+
+
+
+
+
+/*
+*********************************************************************************************************
+*                                         BSP_LCD_FillRect()
+*
+* Description :  填充矩形 （主要用于STemwin的接口函数）
+*
+* Argument(s) :  usX, usY：矩形左上角的坐标
+*                usHeight：矩形的高度
+*			     usWidth ：矩形的宽度
+*                usColor : 颜色
+*
+* Return(s)   :  none
+*
+* Caller(s)   :  Application
+*
+* Note(s)     :  none.
+*********************************************************************************************************
+*/
+
+void BSP_LCD_FillRect(uint16_t usX, uint16_t usY, uint16_t usHeight, uint16_t usWidth, uint16_t usColor)
+{
+	uint32_t index;
+	uint32_t count = usHeight * usWidth;
+
+	BSP_LCD_OpenWindow(usX, usY, usHeight, usWidth);
+
+	BSP_LCD_WriteCmd(CMD_SetPixel);                       // 填充数据指令
+	
+	for (index = 0; index < count; index++)
+	{
+		BSP_LCD_WriteDat(usColor);
+	}
+}
+
+
+
+/*
+*********************************************************************************************************
+*                                         BSP_LCD_DrawHColorLine()
+*
+* Description :  绘制一条彩色水平线（主要用于STemwin的接口函数）
+*
+* Argument(s) :   usX1    ：起始点X坐标
+*			      usY1    ：水平线的Y坐标
+*			      usWidth ：直线的宽度
+*			       pColor : 颜色缓冲区
+*
+* Return(s)   :  none
+*
+* Caller(s)   :  Application
+*
+* Note(s)     :  none.
+*********************************************************************************************************
+*/
+
+void BSP_LCD_DrawHColorLine(uint16_t usX1 , uint16_t usY1, uint16_t usWidth, const uint16_t *pColor)
+{
+	uint16_t index;
+	
+	BSP_LCD_OpenWindow(usX1, usY1, usWidth, 1);
+	
+	BSP_LCD_WriteCmd(CMD_SetPixel);                       // 填充数据指令
+
+	for (index = 0; index < usWidth; index++)
+	{
+		BSP_LCD_WriteDat(*pColor++);
+	}
+}
+
+
+
 
 
 /*
@@ -278,71 +475,9 @@ void BSP_LCD_OpenWindow ( uint16_t usX, uint16_t usY, uint16_t usWidth, uint16_t
 
 
 
-
-uint16_t dat_l =  MAGENTA;
-
-
-
 void LCD_Test(uint16_t *col)
 {
-	uint32_t i;
-	uint16_t dat,temp;
-	uint16_t usR=0, usG=0, usB=0 ;
-	
-	BSP_LCD_WriteCmd(CMD_SetPixel);
-	
-#if LCD_DMA_EN > 0
-	
-	// 注意每次传输未检测上次是否传输完成并且源地址不会增加
-	LCD_DMA_STREAM->PAR   = (uint32_t)col;                    //数据源地址
-	
-	LCD_DMA_STREAM->NDTR = ILI9341_ALL_PIXEL/2;
-	LCD_DMA_ID->LCD_IFCR |= LCD_DMA_CTC_MASK;
-	LCD_DMA_STREAM->CR   |= DEF_BIT_00;                        //使能数据流
-	
-	while(0 == (LCD_DMA_ID->LCD_ISR & LCD_DMA_FTC_MASK));      //等待发送结束	
-	
-	LCD_DMA_STREAM->PAR   = (uint32_t)&dat_l;                  //数据源地址
-	
-	LCD_DMA_STREAM->NDTR = ILI9341_ALL_PIXEL/2;
-	LCD_DMA_ID->LCD_IFCR |= LCD_DMA_CTC_MASK;
-	LCD_DMA_STREAM->CR   |= DEF_BIT_00;                       //使能数据流
-	
-	while(0 == (LCD_DMA_ID->LCD_ISR & LCD_DMA_FTC_MASK));      //等待发送结束	
 
-	
-#else
-	// 显然for循环需要多条指令，导致速度较慢
-	for ( i = 0; i < ILI9341_ALL_PIXEL; i ++ )
-		BSP_LCD_WriteDat(*col);
-	
-#endif /* LCD_DMA_EN */
-	
-	
-	
-	BSP_LCD_WriteCmd ( 0x2E );   /* 读数据 */
-	usR = BSP_LCD_ReadDat (); 	/*FIRST READ OUT DUMMY DATA*/
-		
-	for (i = 0, dat=0; i < ILI9341_ALL_PIXEL; i++)
-	{
-		usR = BSP_LCD_ReadDat ();  	/*READ OUT RED DATA  */
-		usB = BSP_LCD_ReadDat ();  	/*READ OUT BLUE DATA*/
-		usG = BSP_LCD_ReadDat ();  	/*READ OUT GREEN DATA*/	
-	
-		dat = ( ( ( usR >> 11 ) << 11 ) | ( ( usG >> 10 ) << 5 ) | ( usB >> 11 ) );
-		
-		if (temp != dat) {
-			temp = dat;
-			BSP_UART_Printf(BSP_UART_ID_1, "i: %4X   dat: %4X   real1: %4X   real2: %4X\r\n", i, dat, *col, dat_l);
-		}
-		
-		
-		if (*col != dat && dat_l != dat) {
-			BSP_UART_Printf(BSP_UART_ID_1, "error\r\n\r\n");
-			BSP_UART_Printf(BSP_UART_ID_1, "i: %4X   dat: %4X   real1: %4X   real2: %4X\r\n", i, dat, *col, dat_l);
-		}
-		
-	}
 
 }
 
@@ -357,6 +492,136 @@ void LCD_Test(uint16_t *col)
 *********************************************************************************************************
 *********************************************************************************************************
 */
+
+
+
+
+/*
+*********************************************************************************************************
+*                                         BSP_LCD_WriteDat()
+*
+* Description :  向显存写入数据
+*
+* Argument(s) :  dat   要写入的数据
+*
+* Return(s)   :  none
+*
+* Caller(s)   :  Application
+*
+* Note(s)     :  none.
+*********************************************************************************************************
+*/
+
+static __inline void BSP_LCD_WriteDat(uint16_t dat)
+{
+	BSP_LCD_DAT = dat;
+}
+
+
+
+
+/*
+*********************************************************************************************************
+*                                         BSP_LCD_WriteCmd()
+*
+* Description :  向显存写入命令
+*
+* Argument(s) :  cmd   要写入的指令
+*
+* Return(s)   :  none
+*
+* Caller(s)   :  Application
+*
+* Note(s)     :  none.
+*********************************************************************************************************
+*/
+
+static __inline void BSP_LCD_WriteCmd(uint16_t cmd)
+{
+	BSP_LCD_CMD = cmd;
+}
+
+
+
+
+/*
+*********************************************************************************************************
+*                                         BSP_LCD_FSMC_Init()
+*
+* Description :  初始化LCD的FSMC
+*
+* Argument(s) :  none
+*
+* Return(s)   :  none
+*
+* Caller(s)   :  BSP_LCD_Init()
+*
+* Note(s)     :  none.
+*********************************************************************************************************
+*/
+
+static  void         BSP_LCD_FSMC_Init(void)
+{
+	OS_ERR                         err;
+	FSMC_NORSRAMInitTypeDef        lcdInit;
+	FSMC_NORSRAMTimingInitTypeDef  lcdTimigWr, lcdTimigRd;
+	
+	// 读时序配置
+	
+	lcdTimigRd.FSMC_DataSetupTime         = 0x02;                             // x/55ns = 168/1000 ns ,x = 9.24
+	lcdTimigRd.FSMC_AddressSetupTime      = 0x02;                             //地址建立时间
+	
+	lcdTimigRd.FSMC_AccessMode            = FSMC_AccessMode_B;                //模式A参见参考手册
+//	lcdTimigRd.FSMC_DataSetupTime         = 0x05;                             // x/55ns = 168/1000 ns ,x = 9.24
+//	lcdTimigRd.FSMC_AddressSetupTime      = 0x05;                             //地址建立时间
+	lcdTimigRd.FSMC_CLKDivision           = 0x01;                             //LCD工作在异步模式该位无意义                      
+	lcdTimigRd.FSMC_DataLatency           = 0x01;                             //表示数据延迟周期，LCD工作在异步模式该位无意义 
+	lcdTimigRd.FSMC_AddressHoldTime       = 0x01;                             //使用与模式D,模式A该位无意义
+	lcdTimigRd.FSMC_BusTurnAroundDuration = 0x00;                             //LCD 该位无意义
+	
+	// 写时序配置
+	lcdTimigRd.FSMC_DataSetupTime         = 0x02;                             // x/55ns = 168/1000 ns ,x = 9.24
+	lcdTimigRd.FSMC_AddressSetupTime      = 0x02;                             //地址建立时间
+	
+	lcdTimigWr.FSMC_AccessMode            = FSMC_AccessMode_B;                //模式A参见参考手册
+//	lcdTimigWr.FSMC_DataSetupTime         = 0x05;                             // x/55ns = 168/1000 ns ,x = 9.24
+//	lcdTimigWr.FSMC_AddressSetupTime      = 0x05;                             //地址建立时间
+	lcdTimigWr.FSMC_CLKDivision           = 0x01;                             //LCD工作在异步模式该位无意义                      
+	lcdTimigWr.FSMC_DataLatency           = 0x01;                             //表示数据延迟周期，LCD工作在异步模式该位无意义 
+	lcdTimigWr.FSMC_AddressHoldTime       = 0x01;                             //适用与模式D,模式A该位无意义
+	lcdTimigWr.FSMC_BusTurnAroundDuration = 0x00;                             //LCD 该位无意义
+
+	lcdInit.FSMC_MemoryType            = FSMC_MemoryType_NOR;                 //存储器类型
+	lcdInit.FSMC_Bank                  = BSP_LCD_Bank;                        //LCD所在块
+	lcdInit.FSMC_DataAddressMux        = FSMC_DataAddressMux_Disable;         //不复用地址引脚与数据引脚
+	lcdInit.FSMC_WriteOperation        = FSMC_WriteOperation_Enable;          //允许写访问
+	lcdInit.FSMC_ExtendedMode          = FSMC_ExtendedMode_Enable;            //读写时序可以分别配置
+	lcdInit.FSMC_MemoryDataWidth       = FSMC_MemoryDataWidth_16b;            //外部存储器数据宽度
+	
+	lcdInit.FSMC_BurstAccessMode       = FSMC_BurstAccessMode_Disable;        //仅适用于同步存储器
+	lcdInit.FSMC_AsynchronousWait      = FSMC_AsynchronousWait_Disable;       //该LCD无等待引脚
+	lcdInit.FSMC_WaitSignalPolarity    = FSMC_WaitSignalPolarity_High;        //等待信号为高电平有效，LCD无用
+	lcdInit.FSMC_WaitSignal            = FSMC_WaitSignal_Disable;             //用于NOR
+	lcdInit.FSMC_WaitSignalActive      = FSMC_WaitSignalActive_BeforeWaitState;
+	lcdInit.FSMC_WrapMode              = FSMC_WrapMode_Disable;               //仅在突发模式下有效
+	lcdInit.FSMC_WriteBurst            = FSMC_WriteBurst_Disable;             //仅在同步模式下有效
+	
+	lcdInit.FSMC_ReadWriteTimingStruct = &lcdTimigWr;
+	lcdInit.FSMC_WriteTimingStruct     = &lcdTimigRd;
+
+	FSMC_NORSRAMInit(&lcdInit);
+	FSMC_NORSRAMCmd(BSP_LCD_Bank, ENABLE);
+
+
+	// 等待FSMC稳定
+	
+	OSTimeDlyHMSM( 0, 0, 0, 10,
+			       OS_OPT_TIME_HMSM_STRICT,
+			       &err );
+}
+
+
+
 
 
 /*
@@ -632,7 +897,7 @@ static void ILI9341_REG_Config ( void )
 	/* Sleep Out (11h)  */
 	BSP_LCD_WriteCmd ( 0x11 );	
 	
-	OSTimeDlyHMSM( 0, 0, 0, 10,
+	OSTimeDlyHMSM( 0, 0, 0, 120,
 		           OS_OPT_TIME_HMSM_STRICT,
                    &err );	
 	
@@ -733,3 +998,43 @@ static void ILI9341_GramScan (uint8_t ucOption)
 	/* write gram start */
 	BSP_LCD_WriteCmd ( CMD_SetPixel );	
 }
+
+
+
+
+
+/*
+*********************************************************************************************************
+*                                         BSP_LCD_SetCursor()
+*
+* Description :  设定ILI9341的光标坐标
+*
+* Argument(s) :  usX ：在特定扫描方向下光标的X坐标
+*                usY ：在特定扫描方向下光标的Y坐标
+*
+* Return(s)   :  none
+*
+* Caller(s)   :  BSP_LCD_Init()
+*
+* Note(s)     :  none.
+*********************************************************************************************************
+*/
+
+static void BSP_LCD_SetCursor ( uint16_t usX, uint16_t usY )	
+{
+	BSP_LCD_WriteCmd ( CMD_SetCoordinateX ); 				 /* 设置X坐标 */
+	BSP_LCD_WriteDat ( usX >> 8  );	                         /* 先高8位，然后低8位 */
+	BSP_LCD_WriteDat ( usX & 0xff  );	                     /* 设置起始点和结束点*/
+	BSP_LCD_WriteDat ( usX >> 8  );	                         /* 先高8位，然后低8位 */
+	BSP_LCD_WriteDat ( usX & 0xff  );	                     /* 设置起始点和结束点*/
+
+	BSP_LCD_WriteCmd ( CMD_SetCoordinateY ); 			     /* 设置Y坐标*/
+	BSP_LCD_WriteDat ( usY >> 8  );                            
+	BSP_LCD_WriteDat ( usY & 0xff  );
+	BSP_LCD_WriteDat ( usY >> 8  );
+	BSP_LCD_WriteDat ( usY & 0xff  );
+}
+
+
+
+

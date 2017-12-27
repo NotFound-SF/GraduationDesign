@@ -57,6 +57,7 @@
 #define      CMD_SetCoordinateX		 		         0x2A	     //设置X坐标
 #define      CMD_SetCoordinateY		 		         0x2B	     //设置Y坐标
 #define      CMD_SetPixel		 		             0x2C	     //填充像素
+#define      CMD_GetPixel                            0x2E        //读取GRAM
 
 
 /***************************** ILI934 显示区域的起始坐标和总行列数 ***************************/
@@ -94,7 +95,7 @@
 
 // DMA相关
 
-#define         LCD_DMA_EN                       1          // 大于0表示使能DMA
+#define         LCD_DMA_EN                       0          // 大于0表示使能DMA
 
 #if  LCD_DMA_EN > 0
 
@@ -120,7 +121,16 @@
 */
 
 void       BSP_LCD_Init       (void);
-void       BSP_LCD_OpenWindow ( uint16_t usX, uint16_t usY, uint16_t usWidth, uint16_t usHeight );
+uint16_t   LCD_GetHeight      (void);
+uint16_t   LCD_GetWidth       (void);
+
+void       BSP_LCD_ClrScr(uint16_t usColor); 
+uint16_t   BSP_LCD_GetPointPixel (uint16_t usX, uint16_t usY);
+void       BSP_LCD_SetPointPixel (uint16_t usX, uint16_t usY, uint16_t usColor);
+void       BSP_LCD_DrawHLine(uint16_t usX1 , uint16_t usY1 , uint16_t usX2 , uint16_t usColor);
+void       BSP_LCD_DrawVLine(uint16_t usX1 , uint16_t usY1 , uint16_t usY2 , uint16_t usColor);
+void       BSP_LCD_FillRect(uint16_t usX, uint16_t usY, uint16_t usHeight, uint16_t usWidth, uint16_t usColor);
+void       BSP_LCD_DrawHColorLine(uint16_t usX1 , uint16_t usY1, uint16_t usWidth, const uint16_t *pColor);
 void       LCD_Test           (uint16_t *color);
 
 

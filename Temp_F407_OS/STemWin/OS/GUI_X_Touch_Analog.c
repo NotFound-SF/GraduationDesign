@@ -51,19 +51,18 @@ void GUI_TOUCH_X_ActivateY(void)
 
 int  GUI_TOUCH_X_MeasureX(void) 
 {
-#if GUI_DISPLAY_DIREC_TRANSVER > 0
+
     return XPT2046_ReadAdc_Fliter(macXPT2046_CHANNEL_X);
-#else
-	return XPT2046_ReadAdc_Fliter(macXPT2046_CHANNEL_Y);
-#endif
+
+//	return XPT2046_ReadAdc_Fliter(macXPT2046_CHANNEL_Y);
+
 }
 
 int  GUI_TOUCH_X_MeasureY(void) 
 {	
-#if GUI_DISPLAY_DIREC_TRANSVER > 0
     return XPT2046_ReadAdc_Fliter(macXPT2046_CHANNEL_Y);
-#else
-	return XPT2046_ReadAdc_Fliter(macXPT2046_CHANNEL_X);
-#endif
+
+//	return XPT2046_ReadAdc_Fliter(macXPT2046_CHANNEL_X);
+
 }
 
