@@ -72,6 +72,7 @@
 #include  <lib_def.h>
 #include  <lib_ascii.h>
 
+#include "bsp_fsmc.h"
 #include "bsp_uart.h"
 #include "bsp_led.h"
 #include "bsp_eeprom.h"

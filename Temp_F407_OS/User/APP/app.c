@@ -317,29 +317,13 @@ static  void  AppTaskStart (void *p_arg)
 static  void  AppTaskSensor (void *p_arg)
 {
 	OS_ERR     err;
-//	uint32_t   index  = 0, count = 0;
-//	uint32_t  *ptr_ex = (uint32_t*)BSP_SRAM_BASE;
-
 	
 	(void)p_arg;	
 	
 
 	while (DEF_ON) {
-				
-//		for (count = 0; count < 256; count++) {
-//			
-//			for (index = 0; index < 262144; index++) {
-//				ptr_ex[index] = index+count; 
-//			}
-//			
-//			for (index = 0; index < 262144; index++) {
-//				if (ptr_ex[index] != index+count) {
-//					BSP_UART_Printf(BSP_UART_ID_1,"SRAM ERR index: %d\r\n", index);
-//				}
-//			}					
-//		}
-		
-		OSTimeDlyHMSM( 0, 0, 1, 0,
+					
+		OSTimeDlyHMSM( 0, 0, 0, 2,
 		               OS_OPT_TIME_HMSM_STRICT,
                        &err );
 

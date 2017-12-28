@@ -34,7 +34,7 @@ Purpose     : Config / System dependent externals for GUI
 #include "bsp_touch.h"
 
 
-//modify by fire 本文件的函数为触摸驱动，由emWin上层调用
+//本文件的函数为触摸驱动，由emWin上层调用
 
 
 void GUI_TOUCH_X_ActivateX(void) 

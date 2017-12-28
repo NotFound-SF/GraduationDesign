@@ -64,6 +64,7 @@ void MainTask(void) {
   }
   GUI_CURSOR_Show();
   GUI_CURSOR_Select(&GUI_CursorCrossL);
+  GUI_SetFont(GUI_FONT_24_ASCII);
   GUI_SetBkColor(GUI_RED);
   GUI_SetColor(GUI_BLACK);
   GUI_Clear();
@@ -85,7 +86,7 @@ void MainTask(void) {
     //
     // Display the according position
     //
-    GUI_SetColor(GUI_RED);
+    GUI_SetColor(GUI_YELLOW);
     GUI_GotoY(GUI_GetDispPosY() + 4);
     GUI_DispString("\nPosition:\n");
     GUI_GotoY(GUI_GetDispPosY() + 2);

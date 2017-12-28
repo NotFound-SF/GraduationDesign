@@ -43,10 +43,10 @@ Purpose     : Display controller initialization
 //
 // Define the available number of bytes available for the GUI
 //
-#define EX_SRAM   0  /*1 used extern sram, 0 used internal sram */
+#define EX_SRAM   1  /*1 used extern sram, 0 used internal sram */
 
 #if EX_SRAM
-#define GUI_NUMBYTES  (1024*256)
+#define GUI_NUMBYTES  (1024*100)            // 单位是字节
 #else
 #define GUI_NUMBYTES  (70*1024)
 #endif
@@ -71,8 +71,7 @@ Purpose     : Display controller initialization
 void GUI_X_Config(void) 
 {
 #if EX_SRAM
-	static U32 *aMemory;
-	aMemory = (U32 *)BSP_SRAM_BASE;
+	static U32 *aMemory = (U32 *)BSP_SRAM_BASE;
 	
 	/*  Assign memory to emWin */
 	GUI_ALLOC_AssignMemory(aMemory, GUI_NUMBYTES);

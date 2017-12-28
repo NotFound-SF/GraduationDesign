@@ -44,16 +44,6 @@ static  void      BSP_SRAM_RW_GPIO_Init     (void);
 
 void BSP_FSMC_COMMON_Init(void)
 {
-	static uint8_t   initFlag = 0;
-	
-	// 确保该只初始化一次FSMC引脚
-	
-	if(0 == initFlag) {
-		initFlag = 1;                                                          //防止重复初始化导致之前配置失败
-	} else {
-		return;
-	}
-	
 	// 开启FSMC外设时钟
 	
 	FSMC_PERIPH_RCC_CMD(FSMC_PERIPH_RCC, ENABLE);    
@@ -134,7 +124,7 @@ static void  BSP_SRAM_ADDR_GPIO_Init (void)
 	
  	gpioInit.GPIO_Mode  = GPIO_Mode_AF;
 	gpioInit.GPIO_OType = GPIO_OType_PP;
-	gpioInit.GPIO_PuPd  = GPIO_PuPd_UP;
+	gpioInit.GPIO_PuPd  = GPIO_PuPd_NOPULL;
 	gpioInit.GPIO_Speed = GPIO_Speed_100MHz;
 	
 	// 初始化A0-A9模式
@@ -211,7 +201,7 @@ static void  BSP_SRAM_DAT_GPIO_Init (void)
 	
 	gpioInit.GPIO_Mode  = GPIO_Mode_AF;
 	gpioInit.GPIO_OType = GPIO_OType_PP;
-	gpioInit.GPIO_PuPd  = GPIO_PuPd_UP;
+	gpioInit.GPIO_PuPd  = GPIO_PuPd_NOPULL;
 	gpioInit.GPIO_Speed = GPIO_Speed_100MHz;
 	
 	// 初始化D0-D3模式
@@ -266,7 +256,7 @@ static void BSP_SRAM_RW_GPIO_Init(void)
 	
 	gpioInit.GPIO_Mode  = GPIO_Mode_AF;
 	gpioInit.GPIO_OType = GPIO_OType_PP;
-	gpioInit.GPIO_PuPd  = GPIO_PuPd_UP;
+	gpioInit.GPIO_PuPd  = GPIO_PuPd_NOPULL;
 	gpioInit.GPIO_Speed = GPIO_Speed_100MHz;
 	
 	// 初始化NWE

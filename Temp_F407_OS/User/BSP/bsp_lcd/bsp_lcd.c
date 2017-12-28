@@ -5,7 +5,6 @@
 *********************************************************************************************************
 */
 
-#include "bsp_fsmc.h"
 #include "bsp_lcd.h"
 
 
@@ -74,8 +73,6 @@ static  void         BSP_LCD_DMA_Config     (void);
 void  BSP_LCD_Init(void)
 {
 	// 初始化FSMC与初始化控制引脚
-	
-	BSP_FSMC_COMMON_Init();
 	BSP_LCD_CTRL_GPIO_Init();
 	
 	// 初始化FSMC
@@ -247,10 +244,7 @@ uint16_t BSP_LCD_GetPointPixel ( uint16_t usX, uint16_t usY )
 	usG = BSP_LCD_DAT;  	/*READ OUT GREEN DATA*/	
 	
     return ( ( ( usR >> 11 ) << 11 ) | ( ( usG >> 10 ) << 5 ) | ( usB >> 11 ) );
-	
 }
-
-
 
 
 
@@ -360,6 +354,8 @@ void BSP_LCD_FillRect(uint16_t usX, uint16_t usY, uint16_t usHeight, uint16_t us
 
 	BSP_LCD_WriteCmd(CMD_SetPixel);                       // 填充数据指令
 	
+	// 写显存
+	
 	for (index = 0; index < count; index++)
 	{
 		BSP_LCD_WriteDat(usColor);
@@ -394,7 +390,9 @@ void BSP_LCD_DrawHColorLine(uint16_t usX1 , uint16_t usY1, uint16_t usWidth, con
 	BSP_LCD_OpenWindow(usX1, usY1, usWidth, 1);
 	
 	BSP_LCD_WriteCmd(CMD_SetPixel);                       // 填充数据指令
-
+	
+	// 写显存
+	
 	for (index = 0; index < usWidth; index++)
 	{
 		BSP_LCD_WriteDat(*pColor++);
@@ -485,8 +483,9 @@ static  void         BSP_LCD_FSMC_Init(void)
 	FSMC_NORSRAMInitTypeDef        lcdInit;
 	FSMC_NORSRAMTimingInitTypeDef  lcdTimigWr, lcdTimigRdWr;
 	
-	// 读写时序配置
 	
+	// 读写时序配置   很奇怪在F407上emwin使用外部SRAM时，该时间太短就会导致读点不正确比如
+	// FSMC_DataSetupTime=04，FSMC_AddressSetupTime=03 而使用内部SRAM就不会出现该错误
 	lcdTimigRdWr.FSMC_AccessMode            = FSMC_AccessMode_A;                //模式A参见参考手册
 	lcdTimigRdWr.FSMC_DataSetupTime         = 0x05;                             // x/55ns = 168/1000 ns ,x = 9.24
 	lcdTimigRdWr.FSMC_AddressSetupTime      = 0x04;                             //地址建立时间
@@ -495,11 +494,12 @@ static  void         BSP_LCD_FSMC_Init(void)
 	lcdTimigRdWr.FSMC_AddressHoldTime       = 0x00;                             //使用与模式D,模式A该位无意义
 	lcdTimigRdWr.FSMC_BusTurnAroundDuration = 0x01;                             //LCD 该位无意义
 	
-	// 写时序配置
+	// 写时序配置   很奇怪在F407上emwin使用外部SRAM时，该时间太长就会导致读点不正确比如
+	// FSMC_DataSetupTime=04，FSMC_AddressSetupTime=05 而使用内部SRAM就不会出现该错误
 	
 	lcdTimigWr.FSMC_AccessMode            = FSMC_AccessMode_A;                //模式A参见参考手册
-	lcdTimigWr.FSMC_DataSetupTime         = 0x05;                             // x/55ns = 168/1000 ns ,x = 9.24
-	lcdTimigWr.FSMC_AddressSetupTime      = 0x04;                             //地址建立时间
+	lcdTimigWr.FSMC_DataSetupTime         = 0x03;                             // x/55ns = 168/1000 ns ,x = 9.24
+	lcdTimigWr.FSMC_AddressSetupTime      = 0x02;                             //地址建立时间
 	lcdTimigWr.FSMC_CLKDivision           = 0x00;                             //LCD工作在异步模式该位无意义                      
 	lcdTimigWr.FSMC_DataLatency           = 0x00;                             //表示数据延迟周期，LCD工作在异步模式该位无意义 
 	lcdTimigWr.FSMC_AddressHoldTime       = 0x00;                             //适用与模式D,模式A该位无意义
@@ -572,7 +572,7 @@ static  void    BSP_LCD_CTRL_GPIO_Init (void)
 	
 	gpioInit.GPIO_Mode  = GPIO_Mode_AF;
 	gpioInit.GPIO_OType = GPIO_OType_PP;
-	gpioInit.GPIO_PuPd  = GPIO_PuPd_UP;
+	gpioInit.GPIO_PuPd  = GPIO_PuPd_NOPULL;
 	gpioInit.GPIO_Speed = GPIO_Speed_100MHz;
 	
 	// 初始化片选
@@ -861,55 +861,23 @@ static void ILI9341_REG_Config ( void )
 
 
 
-/**
- * @brief  设置ILI9341的GRAM的扫描方向 
- * @param  ucOption ：选择GRAM的扫描方向 
- *     @arg 0-7 :参数可选值为0-7这八个方向
- *
- *	！！！其中0、3、5、6 模式适合从左至右显示文字，
- *				不推荐使用其它模式显示文字	其它模式显示文字会有镜像效果			
- *		
- *	其中0、2、4、6 模式的X方向像素为240，Y方向像素为320
- *	其中1、3、5、7 模式下X方向像素为320，Y方向像素为240
- *
- *	其中 6 模式为大部分液晶例程的默认显示方向
- *	其中 3 模式为摄像头例程使用的方向
- *	其中 0 模式为BMP图片显示例程使用的方向
- *
- * @retval 无
- * @note  坐标图例：A表示向上，V表示向下，<表示向左，>表示向右
-					X表示X轴，Y表示Y轴
 
-------------------------------------------------------------
-模式0：				.		模式1：		.	模式2：			.	模式3：					
-					A		.					A		.		A					.		A									
-					|		.					|		.		|					.		|							
-					Y		.					X		.		Y					.		X					
-					0		.					1		.		2					.		3					
-	<--- X0 o		.	<----Y1	o		.		o 2X--->  .		o 3Y--->	
-------------------------------------------------------------	
-模式4：				.	模式5：			.	模式6：			.	模式7：					
-	<--- X4 o		.	<--- Y5 o		.		o 6X--->  .		o 7Y--->	
-					4		.					5		.		6					.		7	
-					Y		.					X		.		Y					.		X						
-					|		.					|		.		|					.		|							
-					V		.					V		.		V					.		V		
----------------------------------------------------------				
-											 LCD屏示例
-								|-----------------|
-								|			秉火Logo		|
-								|									|
-								|									|
-								|									|
-								|									|
-								|									|
-								|									|
-								|									|
-								|									|
-								|-----------------|
-								屏幕正面（宽240，高320）
+/*
+*********************************************************************************************************
+*                                         ILI9341_GramScan()
+*
+* Description :  设置ILI9341的GRAM的扫描方向 
+*
+* Argument(s) :  ucOption : 设置GRAM扫描方向范围0-7，具体模式参见Doc文件夹下的说明
+*
+* Return(s)   :  none
+*
+* Caller(s)   :  BSP_LCD_Init()
+*
+* Note(s)     :  none.
+*********************************************************************************************************
+*/
 
- *******************************************************/
 static void ILI9341_GramScan (uint8_t ucOption)
 {	
 	//参数检查，只可输入0-7
@@ -922,31 +890,32 @@ static void ILI9341_GramScan (uint8_t ucOption)
 	//根据模式更新XY方向的像素宽度
 	if(ucOption%2 == 0)	
 	{
-		//0 2 4 6模式下X方向像素宽度为240，Y方向为320
+		// 0 2 4 6模式下X方向像素宽度为240，Y方向为320
 		LCD_X_LENGTH = ILI9341_LESS_PIXEL;
 		LCD_Y_LENGTH =	ILI9341_MORE_PIXEL;
 	}
 	else				
 	{
-		//1 3 5 7模式下X方向像素宽度为320，Y方向为240
+		// 1 3 5 7模式下X方向像素宽度为320，Y方向为240
 		LCD_X_LENGTH = ILI9341_MORE_PIXEL;
 		LCD_Y_LENGTH =	ILI9341_LESS_PIXEL; 
 	}
 
-	//0x36命令参数的高3位可用于设置GRAM扫描方向	
+	// 0x36命令参数的高3位可用于设置GRAM扫描方向	
+	
 	BSP_LCD_WriteCmd ( 0x36 ); 
-	BSP_LCD_WriteDat ( 0x08 |(ucOption<<5));//根据ucOption的值设置LCD参数，共0-7种模式
+	BSP_LCD_WriteDat ( 0x08 |(ucOption<<5));            //根据ucOption的值设置LCD参数，共0-7种模式
 	BSP_LCD_WriteCmd ( CMD_SetCoordinateX ); 
-	BSP_LCD_WriteDat ( 0x00 );		/* x 起始坐标高8位 */
-	BSP_LCD_WriteDat ( 0x00 );		/* x 起始坐标低8位 */
-	BSP_LCD_WriteDat ( ((LCD_X_LENGTH-1)>>8)&0xFF ); /* x 结束坐标高8位 */	
-	BSP_LCD_WriteDat ( (LCD_X_LENGTH-1)&0xFF );				/* x 结束坐标低8位 */
+	BSP_LCD_WriteDat ( 0x00 );		                    // x 起始坐标高8位 
+	BSP_LCD_WriteDat ( 0x00 );		                    // x 起始坐标低8位 
+	BSP_LCD_WriteDat ( ((LCD_X_LENGTH-1)>>8)&0xFF );    // x 结束坐标高8位 	
+	BSP_LCD_WriteDat ( (LCD_X_LENGTH-1)&0xFF );		    // x 结束坐标低8位 
 
 	BSP_LCD_WriteCmd ( CMD_SetCoordinateY ); 
-	BSP_LCD_WriteDat ( 0x00 );		/* y 起始坐标高8位 */
-	BSP_LCD_WriteDat ( 0x00 );		/* y 起始坐标低8位 */
-	BSP_LCD_WriteDat ( ((LCD_Y_LENGTH-1)>>8)&0xFF );	/* y 结束坐标高8位 */	 
-	BSP_LCD_WriteDat ( (LCD_Y_LENGTH-1)&0xFF );				/* y 结束坐标低8位 */
+	BSP_LCD_WriteDat ( 0x00 );		                    // y 起始坐标高8位 
+	BSP_LCD_WriteDat ( 0x00 );		                    // y 起始坐标低8位 
+	BSP_LCD_WriteDat ( ((LCD_Y_LENGTH-1)>>8)&0xFF );	// y 结束坐标高8位 	 
+	BSP_LCD_WriteDat ( (LCD_Y_LENGTH-1)&0xFF );		    // y 结束坐标低8位 
 
 	/* write gram start */
 	BSP_LCD_WriteCmd ( CMD_SetPixel );	

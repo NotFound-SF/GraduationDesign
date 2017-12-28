@@ -7,7 +7,6 @@
 
 
 #include "bsp_sram.h"
-#include "bsp_fsmc.h"
 
 
 /*
@@ -52,8 +51,9 @@ void BSP_SRAM_Init(void)
 	
 	// 初始GPIO通用引脚和控制SRAM的独特控制引脚
 	
-	BSP_FSMC_COMMON_Init();
 	BSP_SRAM_CTRL_GPIO_Init();                                                
+	
+	FSMC_NORSRAMDeInit(BSP_SRAM_Bank);
 	
 	// 读时序配置
 	
@@ -63,7 +63,7 @@ void BSP_SRAM_Init(void)
 	sramTimigRd.FSMC_CLKDivision           = 0x00;                             //SRAM工作在异步模式该位无意义                      
 	sramTimigRd.FSMC_DataLatency           = 0x00;                             //表示数据延迟周期，SRAM工作在异步模式该位无意义 
 	sramTimigRd.FSMC_AddressHoldTime       = 0x00;                             //使用与模式D,模式A该位无意义
-	sramTimigRd.FSMC_BusTurnAroundDuration = 0x00;                             //SRAM 该位无意义
+	sramTimigRd.FSMC_BusTurnAroundDuration = 0x01;                             //SRAM 该位无意义
 	
 	sramInit.FSMC_MemoryType            = FSMC_MemoryType_SRAM;                //存储器类型
 	sramInit.FSMC_Bank                  = BSP_SRAM_Bank;                       //SRAM所在块

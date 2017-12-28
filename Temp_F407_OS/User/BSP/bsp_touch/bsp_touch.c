@@ -85,65 +85,55 @@ void XPT2046_Init ( void )
 
 uint16_t XPT2046_ReadAdc_Fliter(uint8_t channel)
 {
-  u8 i, j, min;
-  u16 temp;
-  u16 tempXY[SAMP_CNT];
-  
-  static uint16_t adc_x = 0,adc_y = 0;
+	uint8_t   i,j,min;
+    uint16_t  temp;
+    uint16_t  tempXY[SAMP_CNT];
+    static uint16_t adc_x = 0,adc_y = 0;
 
-  if(TOUCH_PEN_RD()== macXPT2046_INT_ActiveLevel) 
-  {
-    for(i = 0;i < SAMP_CNT;i++)
-    {
-      XPT2046_WriteCMD(channel);
-      tempXY[i] = XPT2046_ReadCMD();     
-    }
-    // 降序排列
-    for(i=0; i<SAMP_CNT-1; i++)
-    {
-      min=i;
-      for (j=i+1; j<SAMP_CNT; j++)
-      {
-        if (tempXY[min] > tempXY[j]) min=j;
-      }
-      temp = tempXY[i];
-      tempXY[i] = tempXY[min];
-      tempXY[min] = temp;
-    }
+    if(TOUCH_PEN_RD()== macXPT2046_INT_ActiveLevel) {
+		
+		for(i = 0;i < SAMP_CNT;i++) {
+			XPT2046_WriteCMD(channel);
+			tempXY[i] = XPT2046_ReadCMD();     
+        }
+		
+        // 降序排列
+        for(i=0; i<SAMP_CNT-1; i++) {
+			min=i;
+           for (j=i+1; j<SAMP_CNT; j++) {
+		       if (tempXY[min] > tempXY[j]) min=j;
+		   }
+		   
+		   temp        = tempXY[i];
+           tempXY[i]   = tempXY[min];
+           tempXY[min] = temp;
+		}
    
-    // 设定阈值
-    if((tempXY[SAMP_CNT_DIV2]-tempXY[SAMP_CNT_DIV2-1]) > 5)
-    {
-      /* 若两个中间值相差太远，则舍弃这个新数据，返回上一次的触摸数据*/
-      if(channel == macXPT2046_CHANNEL_Y )
-        return adc_x; //x通道
-      else
-        return adc_y; //y通道
+		// 设定阈值
+	
+		if((tempXY[SAMP_CNT_DIV2]-tempXY[SAMP_CNT_DIV2-1]) > 5) {
+		
+			// 若两个中间值相差太远，则舍弃这个新数据，返回上一次的触摸数据
+		
+			if(channel == macXPT2046_CHANNEL_Y )
+				return adc_x;                                                //x通道
+			else
+				return adc_y;                                                //y通道 
+		}
     
-    }
-    
-   // 求中间值的均值   
-   if(channel == macXPT2046_CHANNEL_Y)
-   {
-     adc_x = (tempXY[SAMP_CNT_DIV2]+tempXY[SAMP_CNT_DIV2-1]) / 2;
-      return adc_x;
-    }      
-    else
-    {
-      adc_y = (tempXY[SAMP_CNT_DIV2]+tempXY[SAMP_CNT_DIV2-1]) / 2;
-      return adc_y;
-    }
-       
-  }
-  else
-  {
-    return 0;   //没有触摸，返回0
+		// 求中间值的均值  
+	
+		if(channel == macXPT2046_CHANNEL_Y) {
+			adc_x = (tempXY[SAMP_CNT_DIV2]+tempXY[SAMP_CNT_DIV2-1]) / 2;
+			return adc_x;
+		} else {
+			adc_y = (tempXY[SAMP_CNT_DIV2]+tempXY[SAMP_CNT_DIV2-1]) / 2;
+			return adc_y;
+		}     
+  }else {
+    return 0;                                                                 //没有触摸，返回0
   }
 }
-
-
-
-
 
 
 /*
@@ -221,10 +211,6 @@ static void XPT2046_GPIO_SPI_Config ( void )
 
 
 
-
-
-
-
 /*
 *********************************************************************************************************
 *                                        XPT2046_DelayUS()
@@ -241,19 +227,13 @@ static void XPT2046_GPIO_SPI_Config ( void )
 *********************************************************************************************************
 */
 
-static void XPT2046_DelayUS ( __IO uint32_t ulCount )
-{
-	uint32_t i;
-
-
-	for ( i = 0; i < ulCount; i ++ )
-	{
-		uint8_t uc = 28;     //设置值为12，大约延1微秒  
-	      
-		while ( uc -- );     //延1微秒	
-
-	}
+static void XPT2046_DelayUS ( uint32_t ulCount )
+{	uint8_t noUse;
 	
+	while(ulCount--) {
+		noUse = 0x08;
+		while(noUse--);
+	}
 }
 
 
@@ -278,29 +258,21 @@ static void XPT2046_WriteCMD ( uint8_t ucCmd )
 {
 	uint8_t i;
 
-
 	TOUCH_MOSI_0();
-	
 	TOUCH_CLK_LOW();
 
-	for ( i = 0; i < 8; i ++ ) 
-	{
-		
-		if (( ucCmd >> ( 7 - i ) ) & 0x01) {
+	for ( i = 0; i < 8; i ++ ) {
+		if ((ucCmd >> (7 - i)) & 0x01) {
 			TOUCH_MOSI_1();
 		} else {
 			TOUCH_MOSI_0();
 		}
 		
-	  XPT2046_DelayUS ( 5 );
-		
-		TOUCH_CLK_HIGH();
-
-	  XPT2046_DelayUS ( 5 );
-
-		TOUCH_CLK_LOW();
+		XPT2046_DelayUS(5);		
+	    TOUCH_CLK_HIGH();
+	    XPT2046_DelayUS(5);
+	    TOUCH_CLK_LOW();
 	}
-	
 }
 
 
@@ -325,26 +297,17 @@ static uint16_t XPT2046_ReadCMD ( void )
 	uint8_t i;
 	uint16_t usBuf=0, usTemp;
 	
-
-
 	TOUCH_MOSI_0();
-
 	TOUCH_CLK_HIGH();
 
-	for ( i=0;i<12;i++ ) 
-	{
+	for ( i=0;i<12;i++ ) {
 		TOUCH_CLK_LOW();    
-	
 		usTemp = TOUCH_MISO_RD();
-		
 		usBuf |= usTemp << ( 11 - i );
-	
 		TOUCH_CLK_HIGH();
-		
 	}
 	
 	return usBuf;
-
 }
 
 
