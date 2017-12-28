@@ -317,58 +317,32 @@ static  void  AppTaskStart (void *p_arg)
 static  void  AppTaskSensor (void *p_arg)
 {
 	OS_ERR     err;
-//	uint16_t   index = 0;
-//	
-//	uint16_t   color[40]; 
-	
-//	uint16_t   temp;
-//	
+//	uint32_t   index  = 0, count = 0;
+//	uint32_t  *ptr_ex = (uint32_t*)BSP_SRAM_BASE;
 
-//	
-//	for (index = 0; index < 40; index++) {
-//		if (index < 10)
-//		  color[index] = RED;
-//		else
-//			color[index] = YELLOW;
-//	}
 	
 	(void)p_arg;	
 	
 
 	while (DEF_ON) {
-					
-//		BSP_LED_Toggle(1);
-//		BSP_LCD_ClrScr(WHITE);
-//		
-//		BSP_LCD_FillRect(20, 10, 10, 10, RED);
-//		
-//		BSP_LCD_DrawHColorLine(80, 160, 40, color);
-
-//		BSP_LCD_DrawVLine(10, 0, 240, RED);
-//	
-//		BSP_LCD_DrawHLine(0,120, 320, YELLOW);
-//		
-//		BSP_LCD_SetPointPixel(1, 1, 0x3577);
-//		
-//		temp = BSP_LCD_GetPointPixel(1,1);
-//		
-//		if (0x3577 == temp) {
-//			BSP_UART_Printf(BSP_UART_ID_1, "OK\r\n");
-//		} else {
-//			BSP_UART_Printf(BSP_UART_ID_1, "FAIL %X\r\n", temp);
+				
+//		for (count = 0; count < 256; count++) {
+//			
+//			for (index = 0; index < 262144; index++) {
+//				ptr_ex[index] = index+count; 
+//			}
+//			
+//			for (index = 0; index < 262144; index++) {
+//				if (ptr_ex[index] != index+count) {
+//					BSP_UART_Printf(BSP_UART_ID_1,"SRAM ERR index: %d\r\n", index);
+//				}
+//			}					
 //		}
-			
 		
 		OSTimeDlyHMSM( 0, 0, 1, 0,
 		               OS_OPT_TIME_HMSM_STRICT,
-                       &err );	
-		
-		
-		
-//		index++;
-//		if (index==5)
-//			index = 0;
-//		
+                       &err );
+
 //		if(DEF_OK == BSP_18B20_GetTemp(&temp)) {
 //			BSP_UART_Printf(BSP_UART_ID_1, "Temp: %.4f\n", BSP_18B20_TempTran(temp));
 //		}

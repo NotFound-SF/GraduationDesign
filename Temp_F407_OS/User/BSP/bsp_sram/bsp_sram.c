@@ -48,7 +48,7 @@ static  void         BSP_SRAM_CTRL_GPIO_Init (void);
 void BSP_SRAM_Init(void)
 {
 	FSMC_NORSRAMInitTypeDef        sramInit;
-	FSMC_NORSRAMTimingInitTypeDef  sramTimigWr, sramTimigRd;
+	FSMC_NORSRAMTimingInitTypeDef  sramTimigRd;
 	
 	// 初始GPIO通用引脚和控制SRAM的独特控制引脚
 	
@@ -59,39 +59,28 @@ void BSP_SRAM_Init(void)
 	
 	sramTimigRd.FSMC_AccessMode            = FSMC_AccessMode_A;                //模式A参见参考手册
 	sramTimigRd.FSMC_DataSetupTime         = 0x08;                             // x/55ns = 168/1000 ns ,x = 9.24
-	sramTimigRd.FSMC_AddressSetupTime      = 0x02;                             //地址建立时间
+	sramTimigRd.FSMC_AddressSetupTime      = 0x03;                             //地址建立时间
 	sramTimigRd.FSMC_CLKDivision           = 0x00;                             //SRAM工作在异步模式该位无意义                      
 	sramTimigRd.FSMC_DataLatency           = 0x00;                             //表示数据延迟周期，SRAM工作在异步模式该位无意义 
 	sramTimigRd.FSMC_AddressHoldTime       = 0x00;                             //使用与模式D,模式A该位无意义
 	sramTimigRd.FSMC_BusTurnAroundDuration = 0x00;                             //SRAM 该位无意义
 	
-	// 写时序配置
-	
-	sramTimigWr.FSMC_AccessMode            = FSMC_AccessMode_A;                //模式A参见参考手册
-	sramTimigWr.FSMC_DataSetupTime         = 0x08;                             // x/55ns = 168/1000 ns ,x = 9.24
-	sramTimigWr.FSMC_AddressSetupTime      = 0x02;                             //地址建立时间
-	sramTimigWr.FSMC_CLKDivision           = 0x00;                             //SRAM工作在异步模式该位无意义                      
-	sramTimigWr.FSMC_DataLatency           = 0x00;                             //表示数据延迟周期，SRAM工作在异步模式该位无意义 
-	sramTimigWr.FSMC_AddressHoldTime       = 0x00;                             //适用与模式D,模式A该位无意义
-	sramTimigWr.FSMC_BusTurnAroundDuration = 0x00;                             //SRAM 该位无意义
-
-
 	sramInit.FSMC_MemoryType            = FSMC_MemoryType_SRAM;                //存储器类型
 	sramInit.FSMC_Bank                  = BSP_SRAM_Bank;                       //SRAM所在块
 	sramInit.FSMC_DataAddressMux        = FSMC_DataAddressMux_Disable;         //不复用地址引脚与数据引脚
 	sramInit.FSMC_WriteOperation        = FSMC_WriteOperation_Enable;          //允许写访问
-	sramInit.FSMC_ExtendedMode          = FSMC_ExtendedMode_Enable;            //读写时序可以分别配置
+	sramInit.FSMC_ExtendedMode          = FSMC_ExtendedMode_Disable;           //读写时序可以分别配置
 	sramInit.FSMC_MemoryDataWidth       = FSMC_MemoryDataWidth_16b;            //外部存储器数据宽度
 	
 	sramInit.FSMC_BurstAccessMode       = FSMC_BurstAccessMode_Disable;        //仅适用于同步存储器
 	sramInit.FSMC_AsynchronousWait      = FSMC_AsynchronousWait_Disable;       //该SRAM无等待引脚
-	sramInit.FSMC_WaitSignalPolarity    = FSMC_WaitSignalPolarity_High;        //等待信号为高电平有效，SRAM无用
+	sramInit.FSMC_WaitSignalPolarity    = FSMC_WaitSignalPolarity_Low;         //等待信号为高电平有效，SRAM无用
 	sramInit.FSMC_WaitSignal            = FSMC_WaitSignal_Disable;             //用于NOR
 	sramInit.FSMC_WaitSignalActive      = FSMC_WaitSignalActive_BeforeWaitState;
 	sramInit.FSMC_WrapMode              = FSMC_WrapMode_Disable;               //仅在突发模式下有效
 	sramInit.FSMC_WriteBurst            = FSMC_WriteBurst_Disable;             //仅在同步模式下有效
 	
-	sramInit.FSMC_ReadWriteTimingStruct = &sramTimigWr;
+	sramInit.FSMC_ReadWriteTimingStruct = &sramTimigRd;
 	sramInit.FSMC_WriteTimingStruct     = &sramTimigRd;
 	
 	FSMC_NORSRAMInit(&sramInit);
@@ -146,7 +135,7 @@ static  void  BSP_SRAM_CTRL_GPIO_Init (void)
 	
 	gpioInit.GPIO_Mode  = GPIO_Mode_AF;
 	gpioInit.GPIO_OType = GPIO_OType_PP;
-	gpioInit.GPIO_PuPd  = GPIO_PuPd_NOPULL;
+	gpioInit.GPIO_PuPd  = GPIO_PuPd_UP;
 	gpioInit.GPIO_Speed = GPIO_Speed_100MHz;
 	
 	// 初始化NCE

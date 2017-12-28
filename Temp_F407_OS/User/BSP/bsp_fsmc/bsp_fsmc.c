@@ -134,7 +134,7 @@ static void  BSP_SRAM_ADDR_GPIO_Init (void)
 	
  	gpioInit.GPIO_Mode  = GPIO_Mode_AF;
 	gpioInit.GPIO_OType = GPIO_OType_PP;
-	gpioInit.GPIO_PuPd  = GPIO_PuPd_NOPULL;
+	gpioInit.GPIO_PuPd  = GPIO_PuPd_UP;
 	gpioInit.GPIO_Speed = GPIO_Speed_100MHz;
 	
 	// 初始化A0-A9模式
@@ -211,7 +211,7 @@ static void  BSP_SRAM_DAT_GPIO_Init (void)
 	
 	gpioInit.GPIO_Mode  = GPIO_Mode_AF;
 	gpioInit.GPIO_OType = GPIO_OType_PP;
-	gpioInit.GPIO_PuPd  = GPIO_PuPd_NOPULL;
+	gpioInit.GPIO_PuPd  = GPIO_PuPd_UP;
 	gpioInit.GPIO_Speed = GPIO_Speed_100MHz;
 	
 	// 初始化D0-D3模式
@@ -266,7 +266,7 @@ static void BSP_SRAM_RW_GPIO_Init(void)
 	
 	gpioInit.GPIO_Mode  = GPIO_Mode_AF;
 	gpioInit.GPIO_OType = GPIO_OType_PP;
-	gpioInit.GPIO_PuPd  = GPIO_PuPd_NOPULL;
+	gpioInit.GPIO_PuPd  = GPIO_PuPd_UP;
 	gpioInit.GPIO_Speed = GPIO_Speed_100MHz;
 	
 	// 初始化NWE

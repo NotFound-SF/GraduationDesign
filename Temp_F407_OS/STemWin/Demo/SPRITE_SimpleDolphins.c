@@ -28,6 +28,7 @@ Requirements: WindowManager - ( )
 
 #include "GUI.h"
 #include "LCDConf.h" // Required for config check
+#include "bsp_lcd.h"
 
 /*********************************************************************
 *
@@ -2859,12 +2860,13 @@ static void _ShowSprites(void) {
 *       _DrawBackground
 */
 static void _DrawBackground(void) {
-  GUI_DrawGradientV(0, 0, 319, 239, 0xffffff, 0xff0000);  // Draw background gradient
-  GUI_SetTextMode(GUI_TM_TRANS);
-  GUI_SetFont(&GUI_Font24B_ASCII);
-  GUI_SetColor(GUI_BLACK);
-  GUI_DispStringHCenterAt("Showing sprites...", 160, 20); // Draw sample text
-  GUI_DrawBitmap(&bmSeggerLogoLarge, 60, 80);             // Draw company logo
+	BSP_LCD_ClrScr(RED);
+//  GUI_DrawGradientV(0, 0, 319, 239, 0xffffff, 0xff0000);  // Draw background gradient
+//  GUI_SetTextMode(GUI_TM_TRANS);
+//  GUI_SetFont(&GUI_Font24B_ASCII);
+//  GUI_SetColor(GUI_BLACK);
+//  GUI_DispStringHCenterAt("Showing sprites...", 160, 20); // Draw sample text
+//  GUI_DrawBitmap(&bmSeggerLogoLarge, 60, 80);             // Draw company logo
 }
 
 /*********************************************************************
