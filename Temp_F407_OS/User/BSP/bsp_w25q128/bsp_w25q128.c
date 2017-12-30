@@ -3,13 +3,15 @@
 #include "bsp_w25q128.h"
 
 
+
 /*
 *********************************************************************************************************
 *                                       LOCAL GLOBAL VARIABLES
 *********************************************************************************************************
 */
 
-static          OS_SEM                  SemLock;                // 用于FLASH独占访问
+static          OS_SEM                  SemLock;                                        // 用于FLASH独占访问
+static        volatile                  DSTATUS TM_FATFS_FLASH_SPI_Stat = STA_NOINIT;	/* Physical drive status */
 
 
 /*
@@ -64,6 +66,8 @@ void BSP_FLASH_Init(void)
 	// 初始化SPI底层接口
 	
 	BSP_SPIx_Init();
+	
+	BSP_Flash_WAKEUP();                                       // 唤醒FLASH
 }
 
 
@@ -227,6 +231,146 @@ void BSP_FLASH_SectorErase(uint32_t SectorAddr)
 }
 
 
+/*
+*********************************************************************************************************
+*                                             BSP_FLASH_BulkErase()
+*
+* Description : 擦除整块FLASH
+*
+* Argument(s) : none
+*
+* Return(s)   : none
+*
+* Caller(s)   : Application
+*
+* Note(s)     : 
+*********************************************************************************************************
+*/
+
+
+void BSP_FLASH_BulkErase(void)
+{
+	OS_ERR   err;
+	
+	// 锁定FLASH
+	
+	OSSemPend((OS_SEM *)& SemLock,
+	          (OS_TICK )  0,                                   // 永久等待                            
+	          (OS_OPT  )  OS_OPT_PEND_BLOCKING,                // 阻塞等待                        
+	          (CPU_TS *)  0,
+	          (OS_ERR *)  &err);
+	
+	BSP_FLASH_WriteEnable();
+	BSP_FLASH_WaitForWriteEnd();
+	
+	SPI_FLASH_CS_LOW();
+	
+	SPI_FLASH_SendByte(W25X_ChipErase);                        // 发送指令
+	
+	SPI_FLASH_CS_HIGH();
+	
+	// 整块FLASH擦除时间大概为25s
+	
+	OSTimeDlyHMSM( 0, 0, 25, 0,
+		           OS_OPT_TIME_HMSM_STRICT,
+                   &err );
+	
+	// 确保擦除结束
+	
+	BSP_FLASH_WaitForWriteEnd();
+	
+	// 释放端口
+	
+	OSSemPost((OS_SEM *)& SemLock,
+	          (OS_OPT  )  OS_OPT_POST_1,
+	          (OS_ERR *)  &err);
+}
+
+
+/*
+*********************************************************************************************************
+*                                             BSP_Flash_WAKEUP()
+*
+* Description : 从掉电模式唤醒Flash
+*
+* Argument(s) : none
+*
+* Return(s)   : none
+*
+* Caller(s)   : Application
+*
+* Note(s)     : 
+*********************************************************************************************************
+*/
+
+void BSP_Flash_WAKEUP(void)   
+{
+	OS_ERR   err;
+	
+	// 锁定FLASH
+	
+	OSSemPend((OS_SEM *)& SemLock,
+	          (OS_TICK )  0,                                   // 永久等待                            
+	          (OS_OPT  )  OS_OPT_PEND_BLOCKING,                // 阻塞等待                        
+	          (CPU_TS *)  0,
+	          (OS_ERR *)  &err);
+	
+	SPI_FLASH_CS_LOW();
+
+	SPI_FLASH_SendByte(W25X_ReleasePowerDown);
+
+	SPI_FLASH_CS_HIGH();                                       
+	
+	// 释放端口
+	
+	OSSemPost((OS_SEM *)& SemLock,
+	          (OS_OPT  )  OS_OPT_POST_1,
+	          (OS_ERR *)  &err);
+}   
+
+
+/*
+*********************************************************************************************************
+*                                             BSP_Flash_PowerDown()
+*
+* Description : 使Flash进入掉电模式
+*
+* Argument(s) : none
+*
+* Return(s)   : none
+*
+* Caller(s)   : Application
+*
+* Note(s)     : 
+*********************************************************************************************************
+*/
+
+void BSP_Flash_PowerDown(void)   
+{ 
+	OS_ERR   err;
+	
+	// 锁定FLASH
+	
+	OSSemPend((OS_SEM *)& SemLock,
+	          (OS_TICK )  0,                                   // 永久等待                            
+	          (OS_OPT  )  OS_OPT_PEND_BLOCKING,                // 阻塞等待                        
+	          (CPU_TS *)  0,
+	          (OS_ERR *)  &err);
+	
+	SPI_FLASH_CS_LOW();
+
+	SPI_FLASH_SendByte(W25X_PowerDown);
+
+	SPI_FLASH_CS_HIGH();
+	
+	// 释放端口
+	
+	OSSemPost((OS_SEM *)& SemLock,
+	          (OS_OPT  )  OS_OPT_POST_1,
+	          (OS_ERR *)  &err);
+}   
+
+
 
 
 /*
@@ -380,6 +524,185 @@ void BSP_FLASH_BufferRead(uint8_t *pBuffer, uint32_t ReadAddr, uint32_t NumByteT
 
 
 
+/*
+*********************************************************************************************************
+*********************************************************************************************************
+**                                        文件系统接口函数
+*********************************************************************************************************
+*********************************************************************************************************
+*/
+
+
+/*
+*********************************************************************************************************
+*                                             TM_FATFS_FLASH_SPI_disk_status()
+*
+* Description : 由文件系统获取该物理设备就绪状态
+*
+* Argument(s) : none
+*
+* Return(s)   : none
+*
+* Caller(s)   : TM_FATFS_FLASH_SPI_disk_initialize();
+*
+* Note(s)     : 
+*********************************************************************************************************
+*/
+
+
+DSTATUS TM_FATFS_FLASH_SPI_disk_status(void)
+{
+	if(sFLASH_ID == BSP_FLASH_ReadID())			        
+	{
+		return TM_FATFS_FLASH_SPI_Stat &= ~STA_NOINIT;	        // 清除  STA_NOINIT flag 
+	}else
+	{
+		return TM_FATFS_FLASH_SPI_Stat |= STA_NOINIT;
+	}
+}
+
+
+/*
+*********************************************************************************************************
+*                                             TM_FATFS_FLASH_SPI_disk_initialize()
+*
+* Description : 初始化FLASH设备
+*
+* Argument(s) : none
+*
+* Return(s)   : none
+*
+* Caller(s)   : 
+*
+* Note(s)     : 
+*********************************************************************************************************
+*/
+
+DSTATUS TM_FATFS_FLASH_SPI_disk_initialize(void) 
+{
+	// 初始化底层设备
+	
+	BSP_FLASH_Init();
+	
+	// 返回设备状态
+	
+	return TM_FATFS_FLASH_SPI_disk_status(); 
+}
+
+
+
+/*
+*********************************************************************************************************
+*                                             TM_FATFS_FLASH_SPI_disk_ioctl()
+*
+* Description : 获取磁盘信息
+*
+* Argument(s) : 
+*
+* Return(s)   : 
+*
+* Caller(s)   : 
+*
+* Note(s)     : 
+*********************************************************************************************************
+*/
+
+DRESULT TM_FATFS_FLASH_SPI_disk_ioctl(BYTE cmd, char *buff)
+{
+	switch (cmd) {
+		case GET_SECTOR_COUNT:
+			*(DWORD * )buff = 2560;		//sector数量   
+			break;
+		
+		case GET_SECTOR_SIZE :          // Get R/W sector size (WORD)
+			*(WORD * )buff = 4096;		
+			break;
+		
+		case GET_BLOCK_SIZE :           // Get erase block size in unit of sector (DWORD)
+			*(DWORD * )buff = 1;		//flash以1个sector为最小擦除单位
+			break;
+		
+		case CTRL_ERASE_SECTOR:
+			break;
+		
+		case CTRL_SYNC :
+			break;
+	}
+	
+	return RES_OK;
+}
+
+
+/*
+*********************************************************************************************************
+*                                             TM_FATFS_FLASH_SPI_disk_read()
+*
+* Description : 磁盘读函数
+*
+* Argument(s) : buff     : 缓冲区指针
+*               sector   : 扇区号
+*               count    : 读出长度
+*
+* Return(s)   : RES_OK
+*
+* Caller(s)   : FatFs
+*
+* Note(s)     : 
+*********************************************************************************************************
+*/
+
+
+
+DRESULT TM_FATFS_FLASH_SPI_disk_read(BYTE *buff, DWORD sector, UINT count)
+{
+	if ((TM_FATFS_FLASH_SPI_Stat & STA_NOINIT)) 
+	{
+		return RES_NOTRDY;
+	}
+//	sector+=1536;//扇区偏移，外部Flash文件系统空间放在外部Flash后面6M空间
+	
+	BSP_FLASH_BufferRead(buff, sector <<12, count<<12);
+	
+	return RES_OK;
+}
+
+
+
+/*
+*********************************************************************************************************
+*                                             TM_FATFS_FLASH_SPI_disk_write()
+*
+* Description : 磁盘写函数
+*
+* Argument(s) : buff     : 缓冲区指针
+*               sector   : 扇区号
+*               count    : 写的长度
+*
+* Return(s)   : RES_OK
+*
+* Caller(s)   : FatFs
+*
+* Note(s)     : 
+*********************************************************************************************************
+*/
+
+DRESULT TM_FATFS_FLASH_SPI_disk_write(BYTE *buff, DWORD sector, UINT count)
+{
+	uint32_t write_addr;  
+
+//	sector+=1536;//扇区偏移，外部Flash文件系统空间放在外部Flash后面4M空间
+	
+	write_addr = sector<<12;    
+	BSP_FLASH_SectorErase(write_addr);
+	BSP_FLASH_BufferWrite(buff,write_addr,4096);
+	
+	return RES_OK;
+}
+
+
+
+
+
 
 /*
 *********************************************************************************************************
@@ -513,6 +836,10 @@ static void BSP_FLASH_PageWrite(uint8_t *pBuffer, uint32_t WriteAddr, uint16_t N
 	
 	BSP_FLASH_WaitForWriteEnd();
 }
+
+
+
+
 
 
 

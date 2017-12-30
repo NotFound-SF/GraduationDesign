@@ -3,12 +3,15 @@
 #define     __BSP_W25Q128_H
 
 #include "bsp_spi.h"
+#include "diskio.h"
 
 
 // 该FLASH的一个扇区大小为4096个Bytes,最小擦除单位是扇区
 
-
-#define  sFLASH_ID                              0XEF4018     //W25Q128
+//#define  sFLASH_ID                        0xEF3015     //W25X16
+#define  sFLASH_ID                        0xEF4015	 //W25Q16
+//#define  sFLASH_ID                        0XEF4017     //W25Q64
+//#define  sFLASH_ID                        0XEF4018     //W25Q128
 
 /* Private typedef -----------------------------------------------------------*/
 
@@ -64,11 +67,28 @@
 */
 
 void      BSP_FLASH_Init(void);
+void      BSP_Flash_PowerDown(void); 
+void      BSP_Flash_WAKEUP(void); 
 void      BSP_FLASH_BufferRead(u8* pBuffer, u32 ReadAddr, uint32_t NumByteToRead);
 void      BSP_FLASH_BufferWrite(u8* pBuffer, u32 WriteAddr, u16 NumByteToWrite);
 void      BSP_FLASH_SectorErase(u32 SectorAddr);
+void      BSP_FLASH_BulkErase(void);
 uint32_t  BSP_FLASH_ReadID(void);
 uint32_t  BSP_FLASH_ReadDeviceID(void);
+
+
+
+/*
+*********************************************************************************************************
+*                                          FatFs文件系统接口函数
+*********************************************************************************************************
+*/
+
+DSTATUS   TM_FATFS_FLASH_SPI_disk_initialize(void);
+DSTATUS   TM_FATFS_FLASH_SPI_disk_status(void) ;
+DRESULT   TM_FATFS_FLASH_SPI_disk_ioctl(BYTE cmd, char *buff) ;
+DRESULT   TM_FATFS_FLASH_SPI_disk_read(BYTE *buff, DWORD sector, UINT count) ;
+DRESULT   TM_FATFS_FLASH_SPI_disk_write(BYTE *buff, DWORD sector, UINT count) ;
 
 
 

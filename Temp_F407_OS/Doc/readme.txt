@@ -4,7 +4,7 @@
 
 
 
-
+SPI_FLASH    PG8、 PB3、 PB4、 PB5
 步进电机：    PC6、 PC7、 PC8、 PC9
 触摸屏  :     PB0、 PB1、 PB2、 PA5、 PF11
 ADC：         PA0(USART4_TX)、 PA1(USART4_RX)、 PA4（DCMI_HREF）   
@@ -80,6 +80,9 @@ PA15
 PB0
 PB1
 PB2
+PB3
+PB4
+PB5
 
 PB8
 PB9
@@ -144,6 +147,7 @@ PG3
 PG4       
 PG5        
 
+PG8
 PG9
 PG10
 

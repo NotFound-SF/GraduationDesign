@@ -247,7 +247,6 @@ void  BSP_Init (void)
 {
 //	BSP_LED_Init(); 
 	BSP_FSMC_COMMON_Init();
-	BSP_FLASH_Init();
 	BSP_SRAM_Init();
 //	BSP_MOTOR_Init();
 	BSP_UART_Init(BSP_UART_ID_1,115200);

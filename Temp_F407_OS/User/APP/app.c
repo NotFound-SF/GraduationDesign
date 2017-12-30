@@ -36,6 +36,7 @@
 
 #include <includes.h>
 
+#include "ff.h"
 
 /*
 *********************************************************************************************************
@@ -314,48 +315,111 @@ static  void  AppTaskStart (void *p_arg)
 *********************************************************************************************************
 */
 
-#define  FLASH_WriteAddress     0x00000
-#define  FLASH_ReadAddress      FLASH_WriteAddress
-#define  FLASH_SectorToErase    FLASH_WriteAddress
-
-
 static  void  AppTaskSensor (void *p_arg)
 {
 	OS_ERR     err;
 	
-	uint16_t *ptr1 = (uint16_t*)BSP_SRAM_BASE;
-	uint16_t *ptr2 = (uint16_t*)(BSP_SRAM_BASE+4096);
+	FATFS fs;											    /* FatFs文件系统对象 */
+	FIL fnew;											    /* 文件对象 */
+	FRESULT res_flash;                                      /* 文件操作结果 */
+	UINT fnum;            					                /* 文件成功读写数量 */
+	BYTE *ReadBuffer = (BYTE*)BSP_SRAM_BASE;                /* 读缓冲区 */
+	BYTE WriteBuffer[] = "新建文件系统测试文件\r\n";  
 	
-	uint32_t index;
-	uint32_t DeviceID = 0;
-	uint32_t FlashID = 0;
+	//在外部SPI Flash挂载文件系统，文件系统挂载时会对SPI设备初始化
+	res_flash = f_mount(&fs,"1:",1);
+
+	if(res_flash == FR_NO_FILESYSTEM)
+	{
+		BSP_UART_Printf(BSP_UART_ID_1,"》FLASH还没有文件系统，即将进行格式化...\r\n");
+    
+		res_flash=f_mkfs("1:",0,0);							
+		
+		if(res_flash == FR_OK)
+		{
+			BSP_UART_Printf(BSP_UART_ID_1,"》FLASH已成功格式化文件系统。\r\n");
+			/* 格式化后，先取消挂载 */
+			res_flash = f_mount(NULL,"1:",1);			
+			/* 重新挂载	*/			
+			res_flash = f_mount(&fs,"1:",1);
+		}
+		else
+		{
+			BSP_UART_Printf(BSP_UART_ID_1,"《《格式化失败。》》\r\n");
+			while(1);
+		}
+	}
+  else if(res_flash!=FR_OK)
+  {
+    BSP_UART_Printf(BSP_UART_ID_1,"！！外部Flash挂载文件系统失败。(%d)\r\n",res_flash);
+    BSP_UART_Printf(BSP_UART_ID_1,"！！可能原因：SPI Flash初始化不成功。\r\n");
+	while(1);
+  }
+  else
+  {
+    BSP_UART_Printf(BSP_UART_ID_1,"》文件系统挂载成功，可以进行读写测试\r\n");
+  }
+  
+/*----------------------- 文件系统测试：写测试 -----------------------------*/
+	/* 打开文件，如果文件不存在则创建它 */
+	BSP_UART_Printf(BSP_UART_ID_1,"\r\n****** 即将进行文件写入测试... ******\r\n");	
+	res_flash = f_open(&fnew, "1:FatFs读写测试文件.txt",FA_CREATE_ALWAYS | FA_WRITE );
+	if ( res_flash == FR_OK )
+	{
+		BSP_UART_Printf(BSP_UART_ID_1,"》打开/创建FatFs读写测试文件.txt文件成功，向文件写入数据。\r\n");
+    /* 将指定存储区内容写入到文件内 */
+		res_flash=f_write(&fnew,WriteBuffer,sizeof(WriteBuffer),&fnum);
+    if(res_flash==FR_OK)
+    {
+     BSP_UART_Printf(BSP_UART_ID_1,"》文件写入成功，写入字节数据：%d\n",fnum);
+     BSP_UART_Printf(BSP_UART_ID_1,"》向文件写入的数据为：\r\n%s\r\n",WriteBuffer);
+    }
+    else
+    {
+      BSP_UART_Printf(BSP_UART_ID_1,"！！文件写入失败：(%d)\n",res_flash);
+    }    
+		/* 不再读写，关闭文件 */
+    f_close(&fnew);
+	}
+	else
+	{	
+		BSP_UART_Printf(BSP_UART_ID_1,"！！打开/创建文件失败。\r\n");
+	}
 	
+/*------------------- 文件系统测试：读测试 ------------------------------------*/
+	BSP_UART_Printf(BSP_UART_ID_1,"****** 即将进行文件读取测试... ******\r\n");
+	res_flash = f_open(&fnew, "1:FatFs读写测试文件.txt", FA_OPEN_EXISTING | FA_READ); 	 
+	if(res_flash == FR_OK)
+	{
+		BSP_UART_Printf(BSP_UART_ID_1,"》打开文件成功。\r\n");
+		res_flash = f_read(&fnew, ReadBuffer, sizeof(ReadBuffer), &fnum); 
+    if(res_flash==FR_OK)
+    {
+     BSP_UART_Printf(BSP_UART_ID_1,"》文件读取成功,读到字节数据：%d\r\n",fnum);
+      BSP_UART_Printf(BSP_UART_ID_1,"》读取得的文件数据为：\r\n%s \r\n", ReadBuffer);	
+    }
+    else
+    {
+      BSP_UART_Printf(BSP_UART_ID_1,"！！文件读取失败：(%d)\n",res_flash);
+    }		
+	}
+	else
+	{
+		BSP_UART_Printf(BSP_UART_ID_1,"！！打开文件失败。\r\n");
+	}
+	/* 不再读写，关闭文件 */
+	f_close(&fnew);	
+  
+	/* 不再使用文件系统，取消挂载文件系统 */
+	f_mount(NULL,"1:",1);
+	
+
 
 	(void)p_arg;	
 	
-	FlashID = BSP_FLASH_ReadID();
-	DeviceID = BSP_FLASH_ReadDeviceID();
 	
-	BSP_UART_Printf(BSP_UART_ID_1, "\r\nFlashID is 0x%X,  Manufacturer Device ID is 0x%X\r\n", FlashID, DeviceID);
-	
-	/* 擦除将要写入的 SPI FLASH 扇区，FLASH写入前要先擦除 */
-	BSP_FLASH_SectorErase(FLASH_SectorToErase);	 
-	
-	for (index = 0; index < 2048; index++) {
-		ptr1[index] = index * 2;
-		ptr2[index] = 0;
-	}
-		
-	/* 将发送缓冲区的数据写到flash中 */
-	BSP_FLASH_BufferWrite((uint8_t *)ptr1, FLASH_WriteAddress+8, 4000);
-		
-	/* 将刚刚写入的数据读出来放到接收缓冲区中 */
-	BSP_FLASH_BufferRead((uint8_t *)ptr2, FLASH_ReadAddress, 4000);
-	
-	for (index = 0; index < 2048; index++) {
-		BSP_UART_Printf(BSP_UART_ID_1, "%6d", ptr2[index]);
-	}
-	
+//	BSP_UART_Printf(BSP_UART_ID_1, "\r\nFlashID is 0x%X,  Manufacturer Device ID is 0x%X\r\n", FlashID, DeviceID);
+
 	
 	
 
