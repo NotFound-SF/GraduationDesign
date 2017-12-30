@@ -86,6 +86,7 @@
 #include "bsp_touch.h"
 #include "bsp_motor.h"
 #include "bsp_acs712.h"
+#include "bsp_w25q128.h"
 
 
 

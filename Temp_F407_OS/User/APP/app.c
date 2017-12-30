@@ -277,23 +277,23 @@ static  void  AppTaskStart (void *p_arg)
 	
 	//创建应用任务,emwin的官方示例函数 GUIDEMO_Main
 	
-	OSTaskCreate((OS_TCB     *)&AppTaskGUIDemoTCB,                                        
-				(CPU_CHAR   *)"GUI Demo Test", 									                     
-				(OS_TASK_PTR ) MainTask,									                        
-			    (void       *) 0,																
-				(OS_PRIO     ) APP_TASK_GUI_DEMO_PRIO,					
-				(CPU_STK    *)&AppTaskGUIDemoStk[0],						
-				(CPU_STK_SIZE) APP_TASK_GUI_DEMO_STK_SIZE / 10,				
-			    (CPU_STK_SIZE) APP_TASK_GUI_DEMO_STK_SIZE,        		
-				(OS_MSG_QTY  ) 0u,
-				(OS_TICK     ) 0u,
-				(void       *) 0,
-	     		(OS_OPT      )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
-				(OS_ERR     *)&err);															
+//	OSTaskCreate((OS_TCB     *)&AppTaskGUIDemoTCB,                                        
+//				(CPU_CHAR   *)"GUI Demo Test", 									                     
+//				(OS_TASK_PTR ) MainTask,									                        
+//			    (void       *) 0,																
+//				(OS_PRIO     ) APP_TASK_GUI_DEMO_PRIO,					
+//				(CPU_STK    *)&AppTaskGUIDemoStk[0],						
+//				(CPU_STK_SIZE) APP_TASK_GUI_DEMO_STK_SIZE / 10,				
+//			    (CPU_STK_SIZE) APP_TASK_GUI_DEMO_STK_SIZE,        		
+//				(OS_MSG_QTY  ) 0u,
+//				(OS_TICK     ) 0u,
+//				(void       *) 0,
+//	     		(OS_OPT      )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
+//				(OS_ERR     *)&err);															
 
-	if(err==OS_ERR_NONE) {
-		BSP_UART_Printf(BSP_UART_ID_1, "OK");
-    }
+//	if(err==OS_ERR_NONE) {
+//		BSP_UART_Printf(BSP_UART_ID_1, "OK");
+//    }
 	
     OSTaskDel(&AppTaskStartTCB, &err);
 }
@@ -314,16 +314,56 @@ static  void  AppTaskStart (void *p_arg)
 *********************************************************************************************************
 */
 
+#define  FLASH_WriteAddress     0x00000
+#define  FLASH_ReadAddress      FLASH_WriteAddress
+#define  FLASH_SectorToErase    FLASH_WriteAddress
+
+
 static  void  AppTaskSensor (void *p_arg)
 {
 	OS_ERR     err;
 	
+	uint16_t *ptr1 = (uint16_t*)BSP_SRAM_BASE;
+	uint16_t *ptr2 = (uint16_t*)(BSP_SRAM_BASE+4096);
+	
+	uint32_t index;
+	uint32_t DeviceID = 0;
+	uint32_t FlashID = 0;
+	
+
 	(void)p_arg;	
 	
+	FlashID = BSP_FLASH_ReadID();
+	DeviceID = BSP_FLASH_ReadDeviceID();
+	
+	BSP_UART_Printf(BSP_UART_ID_1, "\r\nFlashID is 0x%X,  Manufacturer Device ID is 0x%X\r\n", FlashID, DeviceID);
+	
+	/* 擦除将要写入的 SPI FLASH 扇区，FLASH写入前要先擦除 */
+	BSP_FLASH_SectorErase(FLASH_SectorToErase);	 
+	
+	for (index = 0; index < 2048; index++) {
+		ptr1[index] = index * 2;
+		ptr2[index] = 0;
+	}
+		
+	/* 将发送缓冲区的数据写到flash中 */
+	BSP_FLASH_BufferWrite((uint8_t *)ptr1, FLASH_WriteAddress+8, 4000);
+		
+	/* 将刚刚写入的数据读出来放到接收缓冲区中 */
+	BSP_FLASH_BufferRead((uint8_t *)ptr2, FLASH_ReadAddress, 4000);
+	
+	for (index = 0; index < 2048; index++) {
+		BSP_UART_Printf(BSP_UART_ID_1, "%6d", ptr2[index]);
+	}
+	
+	
+	
+
 
 	while (DEF_ON) {
 					
-		OSTimeDlyHMSM( 0, 0, 0, 2,
+	
+		OSTimeDlyHMSM( 0, 0, 2, 0,
 		               OS_OPT_TIME_HMSM_STRICT,
                        &err );
 
@@ -360,7 +400,7 @@ static  void  AppTaskTouch (void *p_arg)
 		               OS_OPT_TIME_HMSM_STRICT,
                        &err );
 		
-		 GUI_TOUCH_Exec();                     // 更细触摸屏数据
+//		 GUI_TOUCH_Exec();                     // 更细触摸屏数据
 	}
 	
 }
@@ -401,7 +441,7 @@ static  void  AppTaskLed1   (void *p_arg)
 		
 		
 //		BSP_UART_Printf(BSP_UART_ID_1, "i: %f\r\n", BSP_ACS_GetS_Real());
-		BSP_LED_Toggle(1);
+//		BSP_LED_Toggle(1);
 		OSTimeDlyHMSM( 0, 0, 0, 200,
 		               OS_OPT_TIME_HMSM_STRICT,
                        &err );
