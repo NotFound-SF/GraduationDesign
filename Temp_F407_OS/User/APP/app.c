@@ -207,7 +207,7 @@ static  void  AppTaskStart (void *p_arg)
 				(OS_ERR     *)&err);
 			 
 	if(err==OS_ERR_NONE) {
-		BSP_UART_Printf(BSP_UART_ID_1, "OK");
+		BSP_UART_Printf(BSP_UART_ID_1, "AppTaskSensor OK");
 	}
 	
 	
@@ -230,7 +230,7 @@ static  void  AppTaskStart (void *p_arg)
 				(OS_ERR     *)&err);
 			 
 	if(err==OS_ERR_NONE) {
-		BSP_UART_Printf(BSP_UART_ID_1, "OK");
+		BSP_UART_Printf(BSP_UART_ID_1, "AppTaskTouch OK");
 	}
 				 
 				 
@@ -251,7 +251,7 @@ static  void  AppTaskStart (void *p_arg)
 			    (OS_ERR     *)&err);
 			 
     if(err==OS_ERR_NONE) {
-		BSP_UART_Printf(BSP_UART_ID_1, "OK");
+		BSP_UART_Printf(BSP_UART_ID_1, "AppTaskLed1 OK");
     }
 	
 	
@@ -272,7 +272,7 @@ static  void  AppTaskStart (void *p_arg)
 				(OS_ERR     *)&err);															
 
 	if(err==OS_ERR_NONE) {
-		BSP_UART_Printf(BSP_UART_ID_1, "OK");
+		BSP_UART_Printf(BSP_UART_ID_1, "AppTaskMotor OK");
     }
 	
 	
@@ -293,7 +293,7 @@ static  void  AppTaskStart (void *p_arg)
 				(OS_ERR     *)&err);															
 
 	if(err==OS_ERR_NONE) {
-		BSP_UART_Printf(BSP_UART_ID_1, "OK");
+		BSP_UART_Printf(BSP_UART_ID_1, "MainTask OK");
     }
 	
     OSTaskDel(&AppTaskStartTCB, &err);
@@ -403,7 +403,8 @@ static  void  AppTaskLed1   (void *p_arg)
 		
 		
 //		BSP_UART_Printf(BSP_UART_ID_1, "i: %f\r\n", BSP_ACS_GetS_Real());
-//		BSP_LED_Toggle(1);
+		BSP_LED_Toggle(3);
+		
 		OSTimeDlyHMSM( 0, 0, 0, 200,
 		               OS_OPT_TIME_HMSM_STRICT,
                        &err );
