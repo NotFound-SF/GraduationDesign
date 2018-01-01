@@ -278,23 +278,23 @@ static  void  AppTaskStart (void *p_arg)
 	
 	//创建应用任务,emwin的官方示例函数 GUIDEMO_Main
 	
-//	OSTaskCreate((OS_TCB     *)&AppTaskGUIDemoTCB,                                        
-//				(CPU_CHAR   *)"GUI Demo Test", 									                     
-//				(OS_TASK_PTR ) MainTask,									                        
-//			    (void       *) 0,																
-//				(OS_PRIO     ) APP_TASK_GUI_DEMO_PRIO,					
-//				(CPU_STK    *)&AppTaskGUIDemoStk[0],						
-//				(CPU_STK_SIZE) APP_TASK_GUI_DEMO_STK_SIZE / 10,				
-//			    (CPU_STK_SIZE) APP_TASK_GUI_DEMO_STK_SIZE,        		
-//				(OS_MSG_QTY  ) 0u,
-//				(OS_TICK     ) 0u,
-//				(void       *) 0,
-//	     		(OS_OPT      )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
-//				(OS_ERR     *)&err);															
+	OSTaskCreate((OS_TCB     *)&AppTaskGUIDemoTCB,                                        
+				(CPU_CHAR   *)"GUI Demo Test", 									                     
+				(OS_TASK_PTR ) MainTask,									                        
+			    (void       *) 0,																
+				(OS_PRIO     ) APP_TASK_GUI_DEMO_PRIO,					
+				(CPU_STK    *)&AppTaskGUIDemoStk[0],						
+				(CPU_STK_SIZE) APP_TASK_GUI_DEMO_STK_SIZE / 10,				
+			    (CPU_STK_SIZE) APP_TASK_GUI_DEMO_STK_SIZE,        		
+				(OS_MSG_QTY  ) 0u,
+				(OS_TICK     ) 0u,
+				(void       *) 0,
+	     		(OS_OPT      )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
+				(OS_ERR     *)&err);															
 
-//	if(err==OS_ERR_NONE) {
-//		BSP_UART_Printf(BSP_UART_ID_1, "OK");
-//    }
+	if(err==OS_ERR_NONE) {
+		BSP_UART_Printf(BSP_UART_ID_1, "OK");
+    }
 	
     OSTaskDel(&AppTaskStartTCB, &err);
 }
@@ -318,122 +318,20 @@ static  void  AppTaskStart (void *p_arg)
 static  void  AppTaskSensor (void *p_arg)
 {
 	OS_ERR     err;
-	
-	FATFS fs;											    /* FatFs文件系统对象 */
-	FIL fnew;											    /* 文件对象 */
-	FRESULT res_flash;                                      /* 文件操作结果 */
-	UINT fnum;            					                /* 文件成功读写数量 */
-	BYTE *ReadBuffer = (BYTE*)BSP_SRAM_BASE;                /* 读缓冲区 */
-	BYTE WriteBuffer[] = "新建文件系统测试文件\r\n";  
-	
-	//在外部SPI Flash挂载文件系统，文件系统挂载时会对SPI设备初始化
-	res_flash = f_mount(&fs,"1:",1);
-
-	if(res_flash == FR_NO_FILESYSTEM)
-	{
-		BSP_UART_Printf(BSP_UART_ID_1,"》FLASH还没有文件系统，即将进行格式化...\r\n");
-    
-		res_flash=f_mkfs("1:",0,0);							
-		
-		if(res_flash == FR_OK)
-		{
-			BSP_UART_Printf(BSP_UART_ID_1,"》FLASH已成功格式化文件系统。\r\n");
-			/* 格式化后，先取消挂载 */
-			res_flash = f_mount(NULL,"1:",1);			
-			/* 重新挂载	*/			
-			res_flash = f_mount(&fs,"1:",1);
-		}
-		else
-		{
-			BSP_UART_Printf(BSP_UART_ID_1,"《《格式化失败。》》\r\n");
-			while(1);
-		}
-	}
-  else if(res_flash!=FR_OK)
-  {
-    BSP_UART_Printf(BSP_UART_ID_1,"！！外部Flash挂载文件系统失败。(%d)\r\n",res_flash);
-    BSP_UART_Printf(BSP_UART_ID_1,"！！可能原因：SPI Flash初始化不成功。\r\n");
-	while(1);
-  }
-  else
-  {
-    BSP_UART_Printf(BSP_UART_ID_1,"》文件系统挂载成功，可以进行读写测试\r\n");
-  }
-  
-/*----------------------- 文件系统测试：写测试 -----------------------------*/
-	/* 打开文件，如果文件不存在则创建它 */
-	BSP_UART_Printf(BSP_UART_ID_1,"\r\n****** 即将进行文件写入测试... ******\r\n");	
-	res_flash = f_open(&fnew, "1:FatFs读写测试文件.txt",FA_CREATE_ALWAYS | FA_WRITE );
-	if ( res_flash == FR_OK )
-	{
-		BSP_UART_Printf(BSP_UART_ID_1,"》打开/创建FatFs读写测试文件.txt文件成功，向文件写入数据。\r\n");
-    /* 将指定存储区内容写入到文件内 */
-		res_flash=f_write(&fnew,WriteBuffer,sizeof(WriteBuffer),&fnum);
-    if(res_flash==FR_OK)
-    {
-     BSP_UART_Printf(BSP_UART_ID_1,"》文件写入成功，写入字节数据：%d\n",fnum);
-     BSP_UART_Printf(BSP_UART_ID_1,"》向文件写入的数据为：\r\n%s\r\n",WriteBuffer);
-    }
-    else
-    {
-      BSP_UART_Printf(BSP_UART_ID_1,"！！文件写入失败：(%d)\n",res_flash);
-    }    
-		/* 不再读写，关闭文件 */
-    f_close(&fnew);
-	}
-	else
-	{	
-		BSP_UART_Printf(BSP_UART_ID_1,"！！打开/创建文件失败。\r\n");
-	}
-	
-/*------------------- 文件系统测试：读测试 ------------------------------------*/
-	BSP_UART_Printf(BSP_UART_ID_1,"****** 即将进行文件读取测试... ******\r\n");
-	res_flash = f_open(&fnew, "1:FatFs读写测试文件.txt", FA_OPEN_EXISTING | FA_READ); 	 
-	if(res_flash == FR_OK)
-	{
-		BSP_UART_Printf(BSP_UART_ID_1,"》打开文件成功。\r\n");
-		res_flash = f_read(&fnew, ReadBuffer, sizeof(ReadBuffer), &fnum); 
-    if(res_flash==FR_OK)
-    {
-     BSP_UART_Printf(BSP_UART_ID_1,"》文件读取成功,读到字节数据：%d\r\n",fnum);
-      BSP_UART_Printf(BSP_UART_ID_1,"》读取得的文件数据为：\r\n%s \r\n", ReadBuffer);	
-    }
-    else
-    {
-      BSP_UART_Printf(BSP_UART_ID_1,"！！文件读取失败：(%d)\n",res_flash);
-    }		
-	}
-	else
-	{
-		BSP_UART_Printf(BSP_UART_ID_1,"！！打开文件失败。\r\n");
-	}
-	/* 不再读写，关闭文件 */
-	f_close(&fnew);	
-  
-	/* 不再使用文件系统，取消挂载文件系统 */
-	f_mount(NULL,"1:",1);
-	
+	uint16_t   temp;
 
 
 	(void)p_arg;	
-	
-	
-//	BSP_UART_Printf(BSP_UART_ID_1, "\r\nFlashID is 0x%X,  Manufacturer Device ID is 0x%X\r\n", FlashID, DeviceID);
-
-	
-	
-
 
 	while (DEF_ON) {
 					
-	
-		OSTimeDlyHMSM( 0, 0, 2, 0,
+		OSTimeDlyHMSM( 0, 0, 1, 0,
 		               OS_OPT_TIME_HMSM_STRICT,
                        &err );
 
-//		if(DEF_OK == BSP_18B20_GetTemp(&temp)) {
-//			BSP_UART_Printf(BSP_UART_ID_1, "Temp: %.4f\n", BSP_18B20_TempTran(temp));
-//		}
+		if(DEF_OK == BSP_18B20_GetTemp(&temp)) {
+			BSP_UART_Printf(BSP_UART_ID_1, "Temp: %.4f\n", BSP_18B20_TempTran(temp));
+		}
 	}
 }
 
@@ -464,7 +362,7 @@ static  void  AppTaskTouch (void *p_arg)
 		               OS_OPT_TIME_HMSM_STRICT,
                        &err );
 		
-//		 GUI_TOUCH_Exec();                     // 更细触摸屏数据
+		 GUI_TOUCH_Exec();                     // 更细触摸屏数据
 	}
 	
 }

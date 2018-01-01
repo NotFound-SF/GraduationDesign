@@ -78,7 +78,7 @@
 
 CPU_BOOLEAN  BSP_18B20_Init(void);
 CPU_BOOLEAN  BSP_18B20_GetTemp(uint16_t *temp);
-uint32_t     BSP_18B20_GetTempFast(void);
+uint16_t     BSP_18B20_GetTempFast(void);
 float        BSP_18B20_TempTran(uint16_t temp);
 										    
 

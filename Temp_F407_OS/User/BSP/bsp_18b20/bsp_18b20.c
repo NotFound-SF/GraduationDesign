@@ -1,7 +1,4 @@
 
-
-
-
 /*
 *********************************************************************************************************
 *                                             INCLUDE FILES
@@ -109,8 +106,9 @@ CPU_BOOLEAN BSP_18B20_Init(void)
 *********************************************************************************************************
 */
 
-CPU_BOOLEAN BSP_18B20_GetTemp(uint16_t *temp)
+CPU_BOOLEAN BSP_18B20_GetTemp(uint16_t *ptemp)
 {
+	uint16_t      temp;
 	CPU_BOOLEAN   status;
 	
 	// 确保该进程整个时序独占该定时器
@@ -130,9 +128,10 @@ CPU_BOOLEAN BSP_18B20_GetTemp(uint16_t *temp)
 		status = DEF_OK;
 		BSP_18B20_WriteByte(0xCC);                       //跳过ROM	
 		BSP_18B20_WriteByte(0xBE);                       //发送读温度命令
-		tempBuf  = BSP_18B20_ReadByte();                 //读温度低字节
-		tempBuf |= (uint16_t)BSP_18B20_ReadByte()<<8;    //读温度高字节
-		*temp = tempBuf;
+		temp  = BSP_18B20_ReadByte();                    //读温度低字节
+		temp |= (uint16_t)BSP_18B20_ReadByte()<<8;       //读温度高字节
+		tempBuf = temp;
+		*ptemp = temp;
 	} else {
 		status = DEF_FAIL;
 	}
@@ -161,7 +160,7 @@ CPU_BOOLEAN BSP_18B20_GetTemp(uint16_t *temp)
 *********************************************************************************************************
 */
 
-uint32_t   BSP_18B20_GetTempFast(void)
+uint16_t   BSP_18B20_GetTempFast(void)
 {
 		return tempBuf;
 }
@@ -353,7 +352,7 @@ static void BSP_18B20_WriteByte(uint8_t data)
 
 static uint8_t  BSP_18B20_ReadByte(void)
 {
-	uint8_t data;
+	uint8_t data = 0;                                      // 不初始化就会导致读取出错？？
 	uint8_t mask;
 	
 	for(mask = 0x01; mask != 0; mask <<= 1) {
@@ -379,8 +378,5 @@ static uint8_t  BSP_18B20_ReadByte(void)
 	
 	return data;
 }
-
-
-
 
 

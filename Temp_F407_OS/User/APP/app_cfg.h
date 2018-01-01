@@ -74,7 +74,7 @@
 *********************************************************************************************************
 */
 
-#define  APP_TASK_SENSOR_STK_SIZE                   4096u
+#define  APP_TASK_SENSOR_STK_SIZE                   128u
 
 #define  APP_TASK_START_STK_SIZE                    128u
 
