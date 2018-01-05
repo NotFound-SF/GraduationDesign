@@ -355,7 +355,7 @@ static uint8_t  BSP_18B20_ReadByte(void)
 	uint8_t mask;
 	uint8_t data = 0x00;                                        // 不初始化就会导致读取出错？？
 	
-	for(mask = 0x01; mask != 0; mask <<= 1) {
+	for(mask = 0x01; mask != 0; mask <<= 1) { 
 		
 		// 产生读取每个bit的起始信号
 		
