@@ -3,7 +3,9 @@
 #include <pthread.h>
 #include <queue>
 #include <sys/resource.h>
+#include <ext/hash_map>
 
+using namespace __gnu_cxx;
 using namespace std;
 
 
@@ -18,6 +20,12 @@ static int               epollfd;
 static pthread_mutex_t   elock = PTHREAD_MUTEX_INITIALIZER;
 static struct workinfo   *worklist;           // 线程工作列表 
 
+hash_map<int, fdinfo>    fdinfomap;               
+hash_map<uint32_t, int>  keyfdmap;
+
+
+
+void *time_thread(void *arg);
 void *handle_thread(void *arg);
 
 
@@ -37,6 +45,7 @@ int main(int argc, char *argv[])
 	struct     epoll_event  *epevents;
 	struct     task_queue   newwork;
 	struct     rlimit       flimit;
+	struct     fdinfo       newfd;
 
 	if (1 == argc) 
 		thread_count = THREAD_COUNT;    
@@ -104,6 +113,10 @@ int main(int argc, char *argv[])
 	}
 
 
+	// 创建超时检测线程
+	pthread_create(&tid, NULL, &time_thread, NULL);                  // 该线程会释放资源
+
+
 	// 主逻辑
 	while (1) {
 		nready = epoll_wait(epollfd, epevents, EPOLL_SIZE, -1);      // wait long				
@@ -119,9 +132,11 @@ int main(int argc, char *argv[])
 				set_fl(clientfd, O_NONBLOCK);                        // 设置为非阻塞
 				event.events = EPOLLIN|EPOLLET;                      // 边缘触发方式
 				event.data.fd = clientfd;
-
+				newfd.DID = INITDID;                                 // 初始化为无效
+				newfd.timeout = TIMECOUNT;                           // 初始化倒计时
 				pthread_mutex_lock(&elock);
 				epoll_ctl(epollfd, EPOLL_CTL_ADD, clientfd, &event);
+				fdinfomap.insert(make_pair(clientfd, newfd));        // 插入到hash表
 				num++;
 				pthread_mutex_unlock(&elock);
 
@@ -132,7 +147,7 @@ int main(int argc, char *argv[])
 				which = epevents[index].data.fd % thread_count;     // 选择队列
 				newwork.cfd = epevents[index].data.fd;              // 初始化要加入队列的数据
 				pthread_mutex_lock(&worklist[which].qlock);
-				if (worklist[which].workq.empty()) {
+				if (worklist[which].workq.empty()) {                // 待处理任务队列为空发信号
 					worklist[which].workq.push(newwork);
 					pthread_cond_signal(&worklist[which].qready);   //线程需要唤醒,可能多余		
 				} else {
@@ -158,8 +173,9 @@ int main(int argc, char *argv[])
 void *handle_thread(void *arg)
 {
 	int               mytid;
+	int               tagfd;
 	int               str_len;
-	char              buf[BUF_SIZE];
+	struct datformat  buf;
 	struct task_queue my_work;
 
 	mytid = (int) arg;
@@ -174,22 +190,46 @@ void *handle_thread(void *arg)
 
 		// 处理主任务发来的任务
 		while (1) {
-			str_len = recv(my_work.cfd, buf, BUF_SIZE, 0);
+			str_len = recv(my_work.cfd, &buf, sizeof(struct datformat), 0);
 			if (0 == str_len) {                                                       // 表示客户端断啦
-				pthread_mutex_lock(&elock);
-				epoll_ctl(epollfd, EPOLL_CTL_DEL, my_work.cfd, NULL);
-				num--;
 				pthread_mutex_unlock(&elock);
-				close(my_work.cfd);
-				printf("Client num:%u\n", num);
+				if (0 == fdinfomap[my_work.cfd].timeout) {                            // 表示已经被超时删除
+					pthread_mutex_unlock(&elock);
+					break;                         
+				}
+				// 标记为删除 0表示将要删除
+				fdinfomap[my_work.cfd].DID = 0;                                       // 0标记该节点被删除
+				pthread_mutex_unlock(&elock);
 				break;
 			} else if (str_len < 0){                        
 				if (EAGAIN == errno)                                                  // 表示缓冲区无数据可读
 					break;
 				else
 					break;                                                            // 表示错误文件号
-			} else {
-				send(my_work.cfd, buf, str_len, 0);
+			} else {                                                                  // 表示有真实数据
+				// 刷新超时参数,取出通信目标fd
+				pthread_mutex_lock(&elock);
+				if (0 == fdinfomap[my_work.cfd].timeout) {                            // 表示已经被超时删除
+					pthread_mutex_unlock(&elock);
+					break;                         
+				}
+
+				fdinfomap[my_work.cfd].timeout = TIMECOUNT;
+				if (INITDID == fdinfomap[my_work.cfd].DID) {                           // 该链接第一次真实通信添加key->dat
+					fdinfomap[my_work.cfd].DID = buf.selfID;	                       // 在main线程已经插入
+					keyfdmap.insert(make_pair(buf.selfID, my_work.cfd));               // 添加dat->key
+				}
+
+				// 通过目标ID找到指定指定文件描述符,0表示目标设备未上线 
+				tagfd = keyfdmap[buf.targetID];                                     
+				printf("selfID: %x\ttargetID: %x\ttagfd: %d\n", buf.selfID, buf.targetID, tagfd);
+				pthread_mutex_unlock(&elock);
+
+				if (0 != tagfd) {
+					send(tagfd, &buf.data, sizeof(datformat)-8, 0);                    // 去掉了目标和头信息需要修改
+				}else {                                                                // 表示设备断线
+					send(my_work.cfd, "outlin", sizeof(datformat)-8, 0);               // 提示自己
+				}
 			}
      	}
 	}
@@ -198,6 +238,53 @@ void *handle_thread(void *arg)
 }
 
 
+
+// 该线程定时递减文件描述符中的标志，以判断设备是否掉线
+// 以及释放只连接占用资源的恶意用户资源
+void *time_thread(void *arg)
+{
+	int            count;
+	uint32_t       tmpID;
+	int            tmpfd;
+  	hash_map<int, fdinfo>::iterator itr;                                               // 迭代容器
+	
+	arg = arg;
+
+	while (1) {
+		// 遍历所有连接的超时时间
+		pthread_mutex_lock(&elock);
+		for(itr = fdinfomap.begin(); itr != fdinfomap.end(); count++) {
+			
+			tmpID = itr->second.DID;                                                   // 取得设备ID
+			itr -> second.timeout--;                                                   // 超时递减	
+
+			if (itr->second.timeout <= 0 || 0 == tmpID) {                              // 表示超时或者客户放弃连接            
+				tmpfd = itr->first;                                                    // 取得文件描述符号
+				epoll_ctl(epollfd, EPOLL_CTL_DEL, tmpfd, NULL);                        // 从epoll中移除
+				//删除队列中的标记
+				keyfdmap.erase(tmpID);                                                 // 通过key删除
+				fdinfomap.erase(itr++);                                               
+				num--;
+				close(tmpfd);
+				printf("Client num:%u\n", num);
+			} else {
+				itr++;
+			}
+			// 减小加锁粒度，不让处理线程长时间挂起
+			if (count>GRANULARITY){
+				count = 0;
+				pthread_mutex_unlock(&elock);                                          // 释放锁
+				usleep(10);                                                            // 切换一次线程，让处理线程执行
+				pthread_mutex_lock(&elock);                                            // 重新获取锁
+			}
+		}
+		pthread_mutex_unlock(&elock);                                                  // 遍历完一次解锁
+		
+		sleep(TIMECYCLE);                                                              // 睡眠该线程
+	}
+
+	return 0;
+}
 
 
 
