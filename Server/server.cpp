@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 				newfd.timeout = TIMECOUNT;                           // 初始化倒计时
 				pthread_mutex_lock(&elock);
 				epoll_ctl(epollfd, EPOLL_CTL_ADD, clientfd, &event);
-				fdinfomap.insert(make_pair(clientfd, newfd));        // 插入到hash表
+				fdinfomap[clientfd] = newfd;                         // 将新链接的客户插入到fd-key表
 				num++;
 				pthread_mutex_unlock(&elock);
 
@@ -217,18 +217,21 @@ void *handle_thread(void *arg)
 				fdinfomap[my_work.cfd].timeout = TIMECOUNT;
 				if (INITDID == fdinfomap[my_work.cfd].DID) {                           // 该链接第一次真实通信添加key->dat
 					fdinfomap[my_work.cfd].DID = buf.selfID;	                       // 在main线程已经插入
-					keyfdmap.insert(make_pair(buf.selfID, my_work.cfd));               // 添加dat->key
+					keyfdmap[buf.selfID] = my_work.cfd;                                // 将其添加到key-fd表
 				}
 
 				// 通过目标ID找到指定指定文件描述符,0表示目标设备未上线 
 				tagfd = keyfdmap[buf.targetID];                                     
-				printf("selfID: %x\ttargetID: %x\ttagfd: %d\n", buf.selfID, buf.targetID, tagfd);
 				pthread_mutex_unlock(&elock);
 
-				if (0 != tagfd) {
-					send(tagfd, &buf.data, sizeof(datformat)-8, 0);                    // 去掉了目标和头信息需要修改
-				}else {                                                                // 表示设备断线
-					send(my_work.cfd, "outlin", sizeof(datformat)-8, 0);               // 提示自己
+				if (0 != buf.targetID) {
+					if (0 != tagfd) {
+						send(tagfd, &buf, sizeof(datformat), 0);                    // 去掉了目标和头信息需要修改
+					}else {                                                                // 表示设备断线
+						//send(my_work.cfd, "outlin", sizeof(datformat), 0);               // 提示自己
+					}
+				} else {                                                                   // 脉搏信息不处理
+					printf("ID: %d\talive\n", buf.selfID);
 				}
 			}
      	}
