@@ -58,6 +58,8 @@
 
 #define  APP_TASK_SENSOR_PRIO                       2u                    //确保优先级最高
 
+#define	 APP_TASK_WIFI_PRIO                         6u
+
 #define  APP_TASK_LED1_PRIO                         12u
 
 #define  APP_TASK_TOUCH_PRIO                        16u
@@ -73,6 +75,8 @@
 *                                            TASK STACK SIZES   32bit
 *********************************************************************************************************
 */
+
+#define  APP_TASK_WIFI_STK_SIZE                     128u
 
 #define  APP_TASK_SENSOR_STK_SIZE                   128u
 

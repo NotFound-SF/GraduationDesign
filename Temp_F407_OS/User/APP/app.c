@@ -36,7 +36,8 @@
 
 #include <includes.h>
 
-#include "ff.h"
+//#include "ff.h"
+#include "eeprom_manager.h"
 
 /*
 *********************************************************************************************************
@@ -62,6 +63,8 @@ static  OS_TCB   AppTaskGUIDemoTCB;
 
 static  OS_TCB   AppTaskMotorTCB;
 
+static  OS_TCB   AppTaskWifiTCB;
+
 
 
 
@@ -85,6 +88,8 @@ static  CPU_STK  AppTaskGUIDemoStk[APP_TASK_GUI_DEMO_STK_SIZE];
 
 static  CPU_STK  AppTaskMotorStk[APP_TASK_MOTOR_STK_SIZE];
 
+static  CPU_STK  AppTaskWifiStk[APP_TASK_WIFI_STK_SIZE];
+
 
 
 
@@ -105,6 +110,8 @@ static  void  AppTaskLed1   (void *p_arg);
 static  void  AppTaskTouch  (void *p_arg);
 
 static  void  AppTaskMotor  (void *p_arg);
+
+static  void  AppTaskWifi  (void *p_arg);
 
 
 
@@ -233,6 +240,27 @@ static  void  AppTaskStart (void *p_arg)
 		BSP_UART_Printf(BSP_UART_ID_1, "AppTaskTouch OK");
 	}
 				 
+	
+	//创建WIFI任务
+	
+	OSTaskCreate((OS_TCB     *)&AppTaskWifiTCB,                                        
+				(CPU_CHAR   *)"Wifi", 									                     
+				(OS_TASK_PTR ) AppTaskWifi,									                        
+			    (void       *) 0,																
+				(OS_PRIO     ) APP_TASK_WIFI_PRIO,					
+				(CPU_STK    *)&AppTaskWifiStk[0],						
+				(CPU_STK_SIZE) APP_TASK_WIFI_STK_SIZE / 10,				
+			    (CPU_STK_SIZE) APP_TASK_WIFI_STK_SIZE,        		
+				(OS_MSG_QTY  ) 0u,
+				(OS_TICK     ) 0u,
+				(void       *) 0,
+	     		(OS_OPT      )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
+				(OS_ERR     *)&err);															
+
+	if(err==OS_ERR_NONE) {
+		BSP_UART_Printf(BSP_UART_ID_1, "AppWifi OK");
+    }
+	
 				 
    //创建子进程 LED1子进程
 	
@@ -330,7 +358,7 @@ static  void  AppTaskSensor (void *p_arg)
                        &err );
 
 		if(DEF_OK == BSP_18B20_GetTemp(&temp)) {
-			BSP_UART_Printf(BSP_UART_ID_1, "Temp: %.4f\n", BSP_18B20_TempTran(temp));
+			//BSP_UART_Printf(BSP_UART_ID_1, "Temp: %.4f\n", BSP_18B20_TempTran(temp));
 		}
 	}
 }
@@ -369,6 +397,48 @@ static  void  AppTaskTouch (void *p_arg)
 
 
 
+/*
+*********************************************************************************************************
+*                                          Wifi TASK
+*
+* Description : 负责Wifi收发
+*
+* Arguments   : p_arg   is the argument passed to 'AppTaskStart()' by 'OSTaskCreate()'.
+*
+* Returns     : none
+*
+* Notes       : none
+*********************************************************************************************************
+*/
+static  void  AppTaskWifi (void *p_arg)
+{
+	int len = 0;
+	uint8_t data[60];
+	uint8_t id = 0;
+	OS_ERR  err;
+	
+	(void)p_arg;
+
+	
+	//BSP_ESP8266_Server_Init();
+	
+	while(DEF_ON) {
+		//len = BSP_ESP8266_Server_Read(data, &id);
+		
+		//BSP_UART_Printf(BSP_UART_ID_1, "len: %d\tid: %d\t:%s\r\n", len, id, data);
+		
+		
+		
+		OSTimeDlyHMSM( 0, 0, 0, 10,
+		               OS_OPT_TIME_HMSM_STRICT,
+                       &err );
+		
+	}
+	
+}
+
+
+
 
 
 /*
@@ -387,12 +457,12 @@ static  void  AppTaskTouch (void *p_arg)
 
 static  void  AppTaskLed1   (void *p_arg)
 {
-
 	OS_ERR          err;
 	
 	(void) p_arg;
 		
 	/* 显示测试 */
+	
 
 	while(DEF_ON) {
 		
@@ -403,6 +473,7 @@ static  void  AppTaskLed1   (void *p_arg)
 		
 		
 //		BSP_UART_Printf(BSP_UART_ID_1, "i: %f\r\n", BSP_ACS_GetS_Real());
+		
 		BSP_LED_Toggle(3);
 		
 		OSTimeDlyHMSM( 0, 0, 0, 200,
